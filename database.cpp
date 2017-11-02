@@ -1,10 +1,10 @@
 #include "database.h"
 #include <iostream>
 
-Database::Database(char* filename)
+Database::Database()
 {
 	database = NULL;
-	open(filename);
+	open("data/direcnet.sqlite");
 }
 
 Database::~Database()
@@ -19,10 +19,71 @@ bool Database::open(char* filename)
 	return false;
 }
 
-vector<vector<string> > Database::query(char* query)
+vector<measuredValue*> Database::get_measured_value() {
+	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue LIMIT 1000;");
+	vector<measuredValue*> values;
+	for (auto &row : results) // access by reference to avoid copying
+	{
+		measuredValue* value = (measuredValue*) malloc(sizeof(measuredValue));
+		value->id = stoi(row.at(0));
+		if(row.at(1) != "") {
+			value->ist = stof(row.at(1));
+		}
+		else {
+			value->ist = NULL;
+		}
+		value->segmentid = stoi(row.at(2));
+		value->second = stoi(row.at(3));
+		value->day = (int) stof(row.at(4));
+		
+		values.push_back(value);
+	}
+
+	return values;
+}
+
+vector<measuredValue*> Database::get_measured_value_by_segmentid(int segmentid) {
+	std::stringstream ss;
+	ss << "SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue WHERE segmentid = " << segmentid << ";";
+	const char* sqlquery = ss.str().c_str();
+	printf("%s", sqlquery);
+	vector<vector<string>> results = query((char*) sqlquery);
+	vector<measuredValue*> values;
+	for (auto &row : results) // access by reference to avoid copying
+	{
+		measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
+		value->id = stoi(row.at(0));
+		if (row.at(1) != "") {
+			value->ist = stof(row.at(1));
+		}
+		else {
+			value->ist = NULL;
+		}
+		value->segmentid = stoi(row.at(2));
+		value->second = stoi(row.at(3));
+		value->day = (int)stof(row.at(4));
+
+		values.push_back(value);
+	}
+
+	return values;
+}
+
+vector<int> Database::get_all_segments_id() {
+	vector<vector<string>> results = query("SELECT id FROM timesegment ORDER BY id;");
+	vector<int> segmentsId;
+
+	for (size_t i = 0; i < results.size(); i++) {
+		segmentsId.push_back(stoi(results.at(i).at(0)));
+	}
+
+	return segmentsId;
+}
+
+vector<vector<string>> Database::query(char* query)
 {
 	sqlite3_stmt *statement;
-	vector<vector<string> > results;
+	vector<vector<string>> results;
 
 	if (sqlite3_prepare_v2(database, query, -1, &statement, 0) == SQLITE_OK)
 	{

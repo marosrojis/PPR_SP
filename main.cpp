@@ -1,88 +1,18 @@
-// PPR_SP.cpp : Defines the entry point for the console application.
-//
-
 #include <ios>
 #include <iostream>
-//#include "./libs/sqlite3.h"
+#include <stdio.h>
+#include <sstream>
+#include <map>
 #include "database.h"
+#include "tinyxml2.h"
 
 using namespace std;
+using namespace tinyxml2;
 
-int test() {
-	int rc;
-	char *error;
-
-	// Open Database
-	cout << "Opening MyDb.db ..." << endl;
-	sqlite3 *db;
-	rc = sqlite3_open("data/direcnet.sqlite", &db);
-	if (rc)
-	{
-		cerr << "Error opening SQLite3 database: " << sqlite3_errmsg(db) << endl << endl;
-		sqlite3_close(db);
-		return 1;
-	}
-	else
-	{
-		cout << "Opened MyDb.db." << endl << endl;
-	}
-
-	// Display MyTable
-	cout << "Retrieving values in MyTable ..." << endl;
-	const char *sqlSelect = "SELECT * FROM timesegment;";
-	char **results = NULL;
-	int rows, columns;
-	sqlite3_get_table(db, sqlSelect, &results, &rows, &columns, &error);
-	if (rc)
-	{
-		cerr << "Error executing SQLite3 query: " << sqlite3_errmsg(db) << endl << endl;
-		sqlite3_free(error);
-	}
-	else
-	{
-		// Display Table
-		for (int rowCtr = 0; rowCtr <= rows; ++rowCtr)
-		{
-			for (int colCtr = 0; colCtr < columns; ++colCtr)
-			{
-				// Determine Cell Position
-				int cellPosition = (rowCtr * columns) + colCtr;
-
-				// Display Cell Value
-				cout.width(12);
-				cout.setf(ios::left);
-				cout << results[cellPosition] << " ";
-			}
-
-			// End Line
-			cout << endl;
-
-			// Display Separator For Header
-			if (0 == rowCtr)
-			{
-				for (int colCtr = 0; colCtr < columns; ++colCtr)
-				{
-					cout.width(12);
-					cout.setf(ios::left);
-					cout << "~~~~~~~~~~~~ ";
-				}
-				cout << endl;
-			}
-		}
-	}
-
-
-	// Close Database
-	cout << "Closing MyDb.db ..." << endl;
-	sqlite3_close(db);
-	cout << "Closed MyDb.db" << endl << endl;
-
-	return 1;
-}
+Database *db;
 
 int test2() {
-	Database *db;
-	db = new Database("data/direcnet.sqlite");
+	
 	vector<vector<string>> result = db->query("SELECT * FROM subject;");
 	for (vector<vector<string>>::iterator it = result.begin(); it < result.end(); ++it)
 	{
@@ -94,13 +24,91 @@ int test2() {
 	return 1;
 }
 
+void printPolynate(XMLPrinter* printer, vector<measuredValue*> values) {
+	std::ostringstream retStream;
+	std::string points;
+	unsigned int lastSecond = values.at(0)->second;
+	float max_value = 0;
+
+	for (auto &row : values) {
+		if (max_value < row->ist) {
+			max_value = row->ist;
+		}
+	}
+
+	for (auto &row : values) {
+		retStream << (row->second - lastSecond) / 60 << "," << (max_value - row->ist) * 20 << " ";
+		
+		//cout << "ID=" << row->id << ", ist=" << row->ist << ", segmentid=" << row->segmentid << ", second=" << row->second << ", day=" << row->day << endl;
+	}
+
+	(*printer).OpenElement("polyline");
+	(*printer).PushAttribute("points", retStream.str().c_str());
+	(*printer).PushAttribute("stroke", "rgb(0,0,0)");
+	(*printer).PushAttribute("stroke-width", "0.5");
+	(*printer).PushAttribute("fill", "transparent");
+}
+
+void printGraph(vector<measuredValue*> values) {
+	FILE * pFile;
+	std::stringstream ss;
+	ss << "test" << values.at(0)->segmentid << ".xml";
+	errno_t err = fopen_s(&pFile, ss.str().c_str(), "w");
+	XMLPrinter printer(pFile);
+	printer.PushDeclaration("xml version=\"1.0\" standalone=\"no\"");
+	printer.PushUnknown("DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"");
+	printer.OpenElement("svg");
+	printer.PushAttribute("xmlns", "http://www.w3.org/2000/svg");
+	printer.PushAttribute("version", "1.1");
+
+	printPolynate(&printer, values);
+
+	printer.CloseElement();
+	printer.CloseElement();
+	cout << printer.CStr();
+}
+
+void printAllSegments(map<unsigned int, vector<measuredValue*>> values) {
+	for (auto &row : values) {
+		printGraph(row.second);
+	}
+
+}
+
+map<unsigned int, vector<measuredValue*>> transform_measured_value(vector<measuredValue*> values) {
+	map<unsigned int, vector<measuredValue*>> values_map;
+	for (auto &row : values) {
+		if (row->ist == NULL) {
+			continue;
+		}
+		map<unsigned int, vector<measuredValue*>>::iterator p = values_map.find(row->segmentid);
+		if (p != values_map.end()) {
+			p->second.push_back(row);
+		}
+		else {
+			vector<measuredValue*> temp;
+			temp.push_back(row);
+			values_map[row->segmentid] = temp;
+		}
+	}
+	return values_map;
+}
+
 int main()
 {
-	test2();
+	db = new Database();
+	vector<int> segmentsId = db->get_all_segments_id();
+
+	vector<measuredValue*> values = db->get_measured_value();
+	map<unsigned int, vector<measuredValue*>> values_map = transform_measured_value(values);
+
+	printAllSegments(values_map);
+
+	//test2();
 
 	// Wait For User To Close Program
-	cout << "Please press any key to exit the program ..." << endl;
-	cin.get();
+	/*cout << "Please press any key to exit the program ..." << endl;
+	cin.get();*/
 
 	return 0;
 

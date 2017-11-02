@@ -3,19 +3,24 @@
 #define __DATABASE_H__
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include "./libs/sqlite3.h"
+#include "columns_type.h"
 
 using namespace std;
 
 class Database
 {
 public:
-	Database(char* filename);
+	Database();
 	~Database();
 
 	bool open(char* filename);
-	vector<vector<string> > query(char* query);
+	vector<vector<string>> query(char* query);
+	vector<measuredValue*> get_measured_value();
+	vector<measuredValue*> get_measured_value_by_segmentid(int segmentid);
+	vector<int> get_all_segments_id();
 	void close();
 
 private:

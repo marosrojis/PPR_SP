@@ -13,4 +13,16 @@ typedef struct measuredValue
 	int segmentid;
 } MEASUREDVALUE;
 
+typedef struct point
+{
+	float x;
+	float y;
+} POINT;
+
+typedef struct peak
+{
+	float x1;
+	float x2;
+} PEAKS;
+
 #endif

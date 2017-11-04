@@ -42,33 +42,6 @@ vector<measuredValue*> Database::get_measured_value() {
 	return values;
 }
 
-vector<measuredValue*> Database::get_measured_value_by_segmentid(int segmentid) {
-	std::stringstream ss;
-	ss << "SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue WHERE segmentid = " << segmentid << ";";
-	const char* sqlquery = ss.str().c_str();
-	printf("%s", sqlquery);
-	vector<vector<string>> results = query((char*) sqlquery);
-	vector<measuredValue*> values;
-	for (auto &row : results) // access by reference to avoid copying
-	{
-		measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
-		value->id = stoi(row.at(0));
-		if (row.at(1) != "") {
-			value->ist = stof(row.at(1));
-		}
-		else {
-			value->ist = NULL;
-		}
-		value->segmentid = stoi(row.at(2));
-		value->second = stoi(row.at(3));
-		value->day = (int)stof(row.at(4));
-
-		values.push_back(value);
-	}
-
-	return values;
-}
-
 vector<int> Database::get_all_segments_id() {
 	vector<vector<string>> results = query("SELECT id FROM timesegment ORDER BY id;");
 	vector<int> segmentsId;

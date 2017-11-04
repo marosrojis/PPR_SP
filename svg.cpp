@@ -30,7 +30,8 @@ void SVG::print_graph(vector<point*> values, vector<point*> values_average, vect
 	print_border(&printer);
 	print_polynate(&printer, values, color1);
 	print_polynate(&printer, values_average, color2);
-	print_peaks(&printer, peaks);
+	float average = print_average_line(&printer, values);
+	print_peaks(&printer, peaks, average);
 	
 	printer.CloseElement();
 	std::cout << printer.CStr();
@@ -47,22 +48,42 @@ void SVG::print_polynate(tinyxml2::XMLPrinter* printer, vector<point*> values, s
 	(*printer).OpenElement("polyline");
 	(*printer).PushAttribute("points", retStream.str().c_str());
 	(*printer).PushAttribute("stroke", color.c_str());
-	(*printer).PushAttribute("stroke-width", "0.5");
+	(*printer).PushAttribute("stroke-width", "1.5");
 	(*printer).PushAttribute("fill", "transparent");
 	(*printer).CloseElement();
 }
 
-void SVG::print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks) {
+void SVG::print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, float average) {
 	for (auto &value : peaks) {
-		(*printer).OpenElement("rect");
-		(*printer).PushAttribute("x", value->x1);
-		(*printer).PushAttribute("y", 0);
-		(*printer).PushAttribute("width", value->x2 - value->x1);
-		(*printer).PushAttribute("height", "100%");
-		(*printer).PushAttribute("style", "fill:green;opacity:0.25");
-		(*printer).CloseElement();
+		if (value->y1 < average && value->y2 < average) {
+			(*printer).OpenElement("rect");
+			(*printer).PushAttribute("x", value->x1);
+			(*printer).PushAttribute("y", 0);
+			(*printer).PushAttribute("width", value->x2 - value->x1);
+			(*printer).PushAttribute("height", "100%");
+			(*printer).PushAttribute("style", "fill:green;opacity:0.25");
+			(*printer).CloseElement();
+		}
 	}
 }
+
+float SVG::print_average_line(tinyxml2::XMLPrinter* printer, vector<point*> points) {
+	float sum = 0;
+	for (auto &value: points) {
+		sum += value->y;
+	}
+	float average = sum / points.size();
+	(*printer).OpenElement("line");
+	(*printer).PushAttribute("x1", 0);
+	(*printer).PushAttribute("y1", average);
+	(*printer).PushAttribute("x2", "100%");
+	(*printer).PushAttribute("y2", average);
+	(*printer).PushAttribute("style", "stroke:rgb(200, 200,200); stroke-width:1.5; opacity: 0.25");
+	(*printer).CloseElement();
+
+	return average;
+}
+
 
 void SVG::print_border(tinyxml2::XMLPrinter* printer) {
 	(*printer).OpenElement("rect");

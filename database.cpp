@@ -20,7 +20,7 @@ bool Database::open(char* filename)
 }
 
 vector<measuredValue*> Database::get_measured_value() {
-	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue LIMIT 1000;");
+	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue;");
 	vector<measuredValue*> values;
 	for (auto &row : results) // access by reference to avoid copying
 	{

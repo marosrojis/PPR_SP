@@ -8,7 +8,7 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 	for (auto &segment : points) {
 		
 		bool is_peak = false;
-		float x_peak = 0;
+		float x_peak = 0, y_peak = 0;
 		size_t i = 0;
 		vector<peak*> peaks;
 		for (auto &point_base_line : segment.second) {
@@ -24,15 +24,21 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 			if (point_base_line->y <= average_line->y) {
 				if (!is_peak) {
 					x_peak = point_base_line->x;
+					y_peak = point_base_line->y;
 					is_peak = true;
 				}
 			}
 			else {
 				if (is_peak) {
-					peak* temp = (peak*)malloc(sizeof(peak));
-					temp->x1 = x_peak;
-					temp->x2 = point_base_line->x;
-					peaks.push_back(temp);
+					if (point_base_line->x - x_peak >= MIN_SECOND_FOR_ACTION) {
+						peak* temp = (peak*)malloc(sizeof(peak));
+						temp->x1 = x_peak;
+						temp->x2 = point_base_line->x;
+						temp->y1 = y_peak;
+						temp->y2 = point_base_line->y;
+						peaks.push_back(temp);
+						
+					}
 					is_peak = false;
 				}
 			}

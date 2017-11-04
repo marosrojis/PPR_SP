@@ -36,6 +36,14 @@ void freePoints(map<unsigned int, vector<point*>> points) {
 	}
 }
 
+void freePeaks(map<unsigned int, vector<peak*>> peaks) {
+	for (auto &segment : peaks) {
+		for (auto &peak : segment.second) {
+			free(peak);
+		}
+	}
+}
+
 void printAllSegments(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
 	map<unsigned int, float> max_values = get_max_values(values);
 	map<unsigned int, vector<point*>> points = get_points_from_values(values, max_values);
@@ -47,6 +55,7 @@ void printAllSegments(map<unsigned int, vector<measuredValue*>> values, map<unsi
 
 	freePoints(points);
 	freePoints(points_average);
+	freePeaks(peaks);
 }
 
 map<unsigned int, vector<measuredValue*>> transform_measured_value(vector<measuredValue*> values) {
@@ -80,6 +89,7 @@ int main()
 	printAllSegments(values_map, values_average);
 
 	freeMeasuredValues(values);
+	freeMapMeasuredValues(values_average);
 	delete(svg);
 	delete(db);
 

@@ -6,9 +6,10 @@
 #include <vector>
 #include "structs.h"
 
-#define MOVING_AVERAGE 15
+#define MOVING_AVERAGE 19
 #define Y_SCALE 30
 #define MINUTE 60
+#define MIN_SECOND_FOR_ACTION 15
 
 using namespace std;
 

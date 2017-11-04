@@ -21,8 +21,9 @@ public:
 
 private:
 	void print_polynate(tinyxml2::XMLPrinter* printer, vector<point*> values, string color);
-	void print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks);
+	void print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, float average);
 	void print_border(tinyxml2::XMLPrinter* printer);
+	float print_average_line(tinyxml2::XMLPrinter* printer, vector<point*> points);
 	float get_max_x_point(vector<point*> values);
 	float get_max_y_point(vector<point*> values);
 };

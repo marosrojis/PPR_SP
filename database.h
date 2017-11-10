@@ -23,6 +23,7 @@ public:
 	void close();
 
 private:
+	unsigned int Database::get_seconds_of_day(int seconds);
 	sqlite3 *database;
 };
 

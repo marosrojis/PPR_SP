@@ -15,7 +15,11 @@ void SVG::print_graph(vector<point*> values, vector<point*> values_average, vect
 void SVG::print_graph(vector<point*> values, vector<point*> values_average, vector<peak*> peaks, int segmentid, std::string color1, std::string color2) {
 	FILE * pFile;
 	std::stringstream ss;
-	ss << "graph/test" << segmentid << ".xml";
+
+	point* x_max = get_max_x_point(values);
+	point* y_max = get_max_y_point(values);
+
+	ss << "graph/test" << segmentid << ".svg";
 	errno_t err = fopen_s(&pFile, ss.str().c_str(), "w");
 	tinyxml2::XMLPrinter printer(pFile);
 	printer.PushDeclaration("xml version=\"1.0\" standalone=\"no\"");
@@ -23,11 +27,11 @@ void SVG::print_graph(vector<point*> values, vector<point*> values_average, vect
 	printer.OpenElement("svg");
 	printer.PushAttribute("xmlns", "http://www.w3.org/2000/svg");
 	printer.PushAttribute("version", "1.1");
-	printer.PushAttribute("style", "padding: 15px 10px");
-	printer.PushAttribute("width", get_max_x_point(values));
-	printer.PushAttribute("height", get_max_y_point(values));
+	printer.PushAttribute("style", "padding: 15px 0 15px 50px");
+	printer.PushAttribute("width", x_max->x);
+	printer.PushAttribute("height", y_max->y + 25);
 
-	print_border(&printer);
+	print_axis(&printer, values, x_max, y_max);
 	print_polynate(&printer, values, color1);
 	print_polynate(&printer, values_average, color2);
 	float average = print_average_line(&printer, values);
@@ -95,22 +99,45 @@ void SVG::print_border(tinyxml2::XMLPrinter* printer) {
 	(*printer).CloseElement();
 }
 
-float SVG::get_max_x_point(vector<point*> values) {
-	float max = 0;
-	for (auto & value : values) {
-		if (max < value->x) {
-			max = value->x;
-		}
-	}
-	return max;
-}
+void SVG::print_axis(tinyxml2::XMLPrinter* printer, vector<point*> values, point* x_max, point* y_max) {
+	(*printer).OpenElement("line");
+	(*printer).PushAttribute("x1", 0);
+	(*printer).PushAttribute("y1", 0);
+	(*printer).PushAttribute("x2", 0);
+	(*printer).PushAttribute("y2", y_max->y);
+	(*printer).PushAttribute("style", "fill: white; stroke: black; stroke-width: 2; opacity: 0.5");
+	(*printer).CloseElement();
 
-float SVG::get_max_y_point(vector<point*> values) {
-	float max = 0;
-	for (auto & value : values) {
-		if (max < value->y) {
-			max = value->y;
+	(*printer).OpenElement("line");
+	(*printer).PushAttribute("x1", 0);
+	(*printer).PushAttribute("y1", y_max->y);
+	(*printer).PushAttribute("x2", x_max->x);
+	(*printer).PushAttribute("y2", y_max->y);
+	(*printer).PushAttribute("style", "fill: white; stroke: black; stroke-width: 2; opacity: 0.5");
+	(*printer).CloseElement();
+
+	size_t i = 0;
+	for (auto &value : values) {
+		if (i % 10 == 0 && x_max->x - value->x > 30) {
+			(*printer).OpenElement("text");
+			(*printer).PushAttribute("x", value->x);
+			(*printer).PushAttribute("y", y_max->y + 20);
+			(*printer).PushAttribute("fill", "black");
+			(*printer).PushAttribute("font-size", "15");
+			(*printer).PushText(get_time(value->second).c_str());
+			(*printer).CloseElement();
 		}
+		i++;
 	}
-	return max;
+
+	for (i = 1; i <= 10; i++) {
+		(*printer).OpenElement("text");
+		(*printer).PushAttribute("x", -20);
+		(*printer).PushAttribute("y", y_max->y / 10 * i);
+		(*printer).PushAttribute("fill", "black");
+		(*printer).PushAttribute("font-size", "15");
+		(*printer).PushText((int)(y_max->ist * (10 - i)));
+		//(*printer).PushText(y_max->ist * (i + 1));
+		(*printer).CloseElement();
+	}
 }

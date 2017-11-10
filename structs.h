@@ -7,8 +7,9 @@
 typedef struct measuredValue
 {
 	unsigned int id;
-	unsigned int day;
+	int64_t day;
 	unsigned int second;
+	unsigned int second_of_day;
 	float ist;
 	int segmentid;
 } MEASUREDVALUE;
@@ -17,6 +18,8 @@ typedef struct point
 {
 	float x;
 	float y;
+	unsigned int second;
+	unsigned int ist;
 } POINT;
 
 typedef struct peak

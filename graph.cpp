@@ -71,6 +71,8 @@ map<unsigned int, vector<point*>> get_points_from_values(map<unsigned int, vecto
 				point* temp = (point *)malloc(sizeof(point));
 				temp->x = static_cast<float>((value->second - lastSecond) / MINUTE);
 				temp->y = (max_values.find(row.first)->second - value->ist) * Y_SCALE;
+				temp->second = value->second_of_day;
+				temp->ist = (int)value->ist;
 				points.push_back(temp);
 			}
 		}

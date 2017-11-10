@@ -34,7 +34,8 @@ vector<measuredValue*> Database::get_measured_value() {
 		}
 		value->segmentid = stoi(row.at(2));
 		value->second = stoi(row.at(3));
-		value->day = (int) stof(row.at(4));
+		value->second_of_day = get_seconds_of_day(value->second);
+		value->day = (int64_t) stof(row.at(4));
 		
 		values.push_back(value);
 	}
@@ -104,4 +105,12 @@ vector<vector<string>> Database::query(char* query)
 void Database::close()
 {
 	sqlite3_close(database);
+}
+
+unsigned int Database::get_seconds_of_day(int seconds) {
+	const unsigned int cseconds_in_day = 86400;
+
+	unsigned int seconds_of_day = seconds - (((int)(seconds / cseconds_in_day)) * cseconds_in_day);
+	return seconds_of_day;
+
 }

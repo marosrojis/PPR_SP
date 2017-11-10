@@ -7,6 +7,7 @@
 #include "graph.h"
 #include "svg.h"
 #include "tinyxml2.h"
+#include <chrono>
 
 using namespace std;
 using namespace tinyxml2;
@@ -81,9 +82,9 @@ int main()
 {
 	db = new Database();
 	svg = new SVG();
-	vector<int> segmentsId = db->get_all_segments_id();
 
 	vector<measuredValue*> values = db->get_measured_value();
+
 	map<unsigned int, vector<measuredValue*>> values_map = transform_measured_value(values);
 	map<unsigned int, vector<measuredValue*>> values_average = calculate_moving_average(values_map);
 	printAllSegments(values_map, values_average);
@@ -92,7 +93,7 @@ int main()
 	freeMapMeasuredValues(values_average);
 	delete(svg);
 	delete(db);
-
+	
 	// Wait For User To Close Program
 	/*cout << "Please press any key to exit the program ..." << endl;
 	cin.get();*/

@@ -136,7 +136,7 @@ void SVG::print_axis(tinyxml2::XMLPrinter* printer, vector<point*> values, point
 		(*printer).PushAttribute("y", y_max->y / 10 * i);
 		(*printer).PushAttribute("fill", "black");
 		(*printer).PushAttribute("font-size", "15");
-		(*printer).PushText((int)(y_max->ist * (10 - i)));
+		(*printer).PushText((int)((int)y_max->ist * (10 - i)));
 		//(*printer).PushText(y_max->ist * (i + 1));
 		(*printer).CloseElement();
 	}

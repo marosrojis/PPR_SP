@@ -2,6 +2,11 @@
 
 using namespace std;
 
+bool compareByLength(const peak* a, const peak* b)
+{
+	return a->sum > b->sum;
+}
+
 map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> points, map<unsigned int, vector<point*>> points_average) {
 	map<unsigned int, vector<peak*>> results;
 
@@ -9,9 +14,11 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 		
 		bool is_peak = false;
 		float x_peak = 0, y_peak = 0;
-		size_t i = 0;
+		size_t i = 0, position_max_peak = 0, z = 0;
 		vector<peak*> peaks;
-		for (auto &point_base_line : segment.second) {
+		point* max_peak = NULL, *point_base_line;
+		for (size_t y = 0; y < segment.second.size(); y++) {
+			point_base_line = segment.second.at(y);
 			if (i >= points_average.find(segment.first)->second.size()) { // i je >= nez celkova velikost average vectoru, tak konec cyklu (uz neni kam sahat)
 				break;
 			}
@@ -23,27 +30,52 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 			
 			if (point_base_line->y <= average_line->y) {
 				if (!is_peak) {
-					x_peak = point_base_line->x;
-					y_peak = point_base_line->y;
 					is_peak = true;
+				}
+				if (max_peak == NULL || point_base_line->y < max_peak->y) {
+					max_peak = point_base_line;
+					position_max_peak = y;
 				}
 			}
 			else {
 				if (is_peak) {
-					if (point_base_line->x - x_peak >= MIN_SECOND_FOR_ACTION) {
-						peak* temp = (peak*)malloc(sizeof(peak));
-						temp->x1 = x_peak;
-						temp->x2 = point_base_line->x;
-						temp->y1 = y_peak;
-						temp->y2 = point_base_line->y;
-						peaks.push_back(temp);
-						
+					z = y - 1;
+					vector<point*> temp_points;
+					while (z >= 0 && max_peak->x - HOUR_TO_MINUTE <= segment.second.at(z)->x) {
+						temp_points.insert(temp_points.begin(), segment.second.at(z));
+						if (z == 0) {
+							break;
+						}
+						z--;
 					}
+//					temp_points.push_back(max_peak);
+					z = y + 1;
+					while (z < points_average.find(segment.first)->second.size() && max_peak->x + HOUR_TO_MINUTE >= segment.second.at(z)->x) {
+						temp_points.push_back(segment.second.at(z));
+						z++;
+					}
+
+					float sum = 0;
+					for (auto &temp_peak : temp_points) {
+						sum += abs(temp_points.at(0)->ist - temp_peak->ist);
+					}
+					peak* new_peak = (peak*)malloc(sizeof(peak));
+					new_peak->x1 = temp_points.at(0)->x;
+					new_peak->y1 = temp_points.at(0)->y;
+					new_peak->x2 = temp_points.at(temp_points.size() - 1)->x;
+					new_peak->y2 = temp_points.at(temp_points.size() - 1)->y;
+					new_peak->sum = sum;
+					peaks.push_back(new_peak);
+
 					is_peak = false;
+					max_peak = NULL;
 				}
 			}
 			i++;
 		}
+		sort(peaks.begin(), peaks.end(), compareByLength);
+		peaks.erase(peaks.begin() + 3, peaks.end());
+
 		results[segment.first] = peaks;
 	}
 	return results;
@@ -72,7 +104,7 @@ map<unsigned int, vector<point*>> get_points_from_values(map<unsigned int, vecto
 				temp->x = static_cast<float>((value->second - lastSecond) / MINUTE);
 				temp->y = (max_values.find(row.first)->second - value->ist) * Y_SCALE;
 				temp->second = value->second_of_day;
-				temp->ist = (int)value->ist;
+				temp->ist = value->ist;
 				points.push_back(temp);
 			}
 		}

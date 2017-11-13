@@ -3,13 +3,16 @@
 #define __GRAPH_H__
 
 #include <map>
+#include <cmath>
 #include <vector>
+#include <algorithm>
 #include "structs.h"
 
-#define MOVING_AVERAGE 19
+#define MOVING_AVERAGE 15
 #define Y_SCALE 30
 #define MINUTE 60
 #define MIN_SECOND_FOR_ACTION 15
+#define HOUR_TO_MINUTE 60
 
 using namespace std;
 

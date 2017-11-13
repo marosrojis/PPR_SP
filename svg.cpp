@@ -59,7 +59,7 @@ void SVG::print_polynate(tinyxml2::XMLPrinter* printer, vector<point*> values, s
 
 void SVG::print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, float average) {
 	for (auto &value : peaks) {
-		if (value->y1 < average && value->y2 < average) {
+		//if (value->y1 < average && value->y2 < average) {
 			(*printer).OpenElement("rect");
 			(*printer).PushAttribute("x", value->x1);
 			(*printer).PushAttribute("y", 0);
@@ -67,7 +67,7 @@ void SVG::print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, float 
 			(*printer).PushAttribute("height", "100%");
 			(*printer).PushAttribute("style", "fill:green;opacity:0.25");
 			(*printer).CloseElement();
-		}
+		//}
 	}
 }
 

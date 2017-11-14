@@ -20,18 +20,21 @@ bool Database::open(char* filename)
 }
 
 vector<measuredValue*> Database::get_measured_value() {
-	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue;");
+	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue WHERE ist IS NOT NULL;");
 	vector<measuredValue*> values;
 	for (auto &row : results) // access by reference to avoid copying
 	{
 		measuredValue* value = (measuredValue*) malloc(sizeof(measuredValue));
+		if (value == NULL) {
+			for (size_t i = 0; i < values.size(); i++) {
+				free(values.at(i));
+			}
+			cout << "Malloc memory error";
+			vector<measuredValue*> free_result;
+			return free_result;
+		}
 		value->id = stoi(row.at(0));
-		if(row.at(1) != "") {
-			value->ist = stof(row.at(1));
-		}
-		else {
-			value->ist = NULL;
-		}
+		value->ist = stof(row.at(1));
 		value->segmentid = stoi(row.at(2));
 		value->second = stoi(row.at(3));
 		value->second_of_day = get_seconds_of_day(value->second);

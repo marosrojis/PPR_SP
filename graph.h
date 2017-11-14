@@ -4,12 +4,15 @@
 
 #include <map>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 #include "structs.h"
 
-#define MOVING_AVERAGE 19
+#define MOVING_AVERAGE 21
 #define Y_SCALE 30
 #define MINUTE 60
-#define MIN_SECOND_FOR_ACTION 15
+#define MIN_SECOND_FOR_ACTION 30
+#define SHOW_PEAKS 6
 
 using namespace std;
 

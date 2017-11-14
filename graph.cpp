@@ -2,6 +2,11 @@
 
 using namespace std;
 
+bool compareBySum(const peak* a, const peak* b)
+{
+	return a->sum > b->sum;
+}
+
 map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> points, map<unsigned int, vector<point*>> points_average) {
 	map<unsigned int, vector<peak*>> results;
 
@@ -9,6 +14,8 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 		
 		bool is_peak = false;
 		float x_peak = 0, y_peak = 0;
+		float sum = 0, grow = 0;
+		point* temp_peak = NULL;
 		size_t i = 0;
 		vector<peak*> peaks;
 		for (auto &point_base_line : segment.second) {
@@ -23,19 +30,26 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 			
 			if (point_base_line->y <= average_line->y) {
 				if (!is_peak) {
-					x_peak = point_base_line->x;
-					y_peak = point_base_line->y;
+					temp_peak = point_base_line;
+					sum = 0;
+					grow = 0;
 					is_peak = true;
+				}
+				else {
+					//sum += point_base_line->ist - temp_peak->ist;
+					sum += abs(temp_peak->ist - point_base_line->ist);
+					grow += temp_peak->ist - point_base_line->ist;
 				}
 			}
 			else {
 				if (is_peak) {
-					if (point_base_line->x - x_peak >= MIN_SECOND_FOR_ACTION) {
+					if (point_base_line->x - x_peak >= MIN_SECOND_FOR_ACTION && grow < 3) {
 						peak* temp = (peak*)malloc(sizeof(peak));
-						temp->x1 = x_peak;
+						temp->x1 = temp_peak->x;
 						temp->x2 = point_base_line->x;
-						temp->y1 = y_peak;
+						temp->y1 = temp_peak->x;
 						temp->y2 = point_base_line->y;
+						temp->sum = sum;
 						peaks.push_back(temp);
 						
 					}
@@ -44,6 +58,12 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 			}
 			i++;
 		}
+		sort(peaks.begin(), peaks.end(), compareBySum);
+		
+		if (peaks.size() > SHOW_PEAKS) {
+			peaks.erase(peaks.begin() + SHOW_PEAKS, peaks.end());
+		}
+
 		results[segment.first] = peaks;
 	}
 	return results;
@@ -72,7 +92,7 @@ map<unsigned int, vector<point*>> get_points_from_values(map<unsigned int, vecto
 				temp->x = static_cast<float>((value->second - lastSecond) / MINUTE);
 				temp->y = (max_values.find(row.first)->second - value->ist) * Y_SCALE;
 				temp->second = value->second_of_day;
-				temp->ist = (int)value->ist;
+				temp->ist = value->ist;
 				points.push_back(temp);
 			}
 		}

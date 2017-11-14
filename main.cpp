@@ -50,8 +50,11 @@ void printAllSegments(map<unsigned int, vector<measuredValue*>> values, map<unsi
 	map<unsigned int, vector<point*>> points = get_points_from_values(values, max_values);
 	map<unsigned int, vector<point*>> points_average = get_points_from_values(values_average, max_values);
 	map<unsigned int, vector<peak*>> peaks = get_peaks(points, points_average);
+	int i = 0;
 	for (auto &row : points) {
-		svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, row.first);
+		//svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, row.first);
+		svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, i);
+		i++;
 	}
 
 	freePoints(points);

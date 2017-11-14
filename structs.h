@@ -19,7 +19,7 @@ typedef struct point
 	float x;
 	float y;
 	unsigned int second;
-	unsigned int ist;
+	float ist;
 } POINT;
 
 typedef struct peak
@@ -28,6 +28,7 @@ typedef struct peak
 	float x2;
 	float y1;
 	float y2;
+	float sum;
 } PEAKS;
 
 #endif

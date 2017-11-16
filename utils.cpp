@@ -26,6 +26,20 @@ point* get_max_y_point(vector<point*> values) {
 	return point_max;
 }
 
+void find_max_x_y_points(vector<point*> values, point* x_point, point* y_point) {
+	float x_max = 0, y_max = 0;
+	for (auto & value : values) {
+		if (x_max < value->x) {
+			x_max = value->x;
+			memcpy(x_point, value, sizeof(point));
+		}
+		if (y_max < value->y) {
+			y_max = value->y;
+			memcpy(y_point, value, sizeof(point));
+		}
+	}
+}
+
 string get_time(unsigned int seconds) {
 	int hours, minutes;
 

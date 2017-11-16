@@ -16,8 +16,11 @@ void SVG::print_graph(vector<point*> values, vector<point*> values_average, vect
 	FILE * pFile;
 	std::stringstream ss;
 
-	point* x_max = get_max_x_point(values);
-	point* y_max = get_max_y_point(values);
+	/*point* x_max = get_max_x_point(values);
+	point* y_max = get_max_y_point(values);*/
+	point* x_max = (point*)malloc(sizeof(point));
+	point* y_max = (point*)malloc(sizeof(point));
+	find_max_x_y_points(values, x_max, y_max);
 
 	ss << "graph/test" << segmentid << ".svg";
 	errno_t err = fopen_s(&pFile, ss.str().c_str(), "w");
@@ -39,6 +42,9 @@ void SVG::print_graph(vector<point*> values, vector<point*> values_average, vect
 	
 	printer.CloseElement();
 	std::cout << printer.CStr();
+
+	free(x_max);
+	free(y_max);
 }
 
 void SVG::print_polynate(tinyxml2::XMLPrinter* printer, vector<point*> values, std::string color) {

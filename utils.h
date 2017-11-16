@@ -10,6 +10,7 @@
 
 point* get_max_x_point(std::vector<point*> values);
 point* get_max_y_point(std::vector<point*> values);
+void find_max_x_y_points(std::vector<point*> values, point* x_point, point* y_point);
 std::string get_time(unsigned int seconds);
 
 #endif

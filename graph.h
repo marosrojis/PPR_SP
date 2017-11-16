@@ -7,6 +7,9 @@
 #include <cmath>
 #include <algorithm>
 #include "structs.h"
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"
+
 
 #define MOVING_AVERAGE 21
 #define Y_SCALE 30

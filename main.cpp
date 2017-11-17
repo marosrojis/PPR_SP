@@ -59,10 +59,10 @@ void printAllSegments(map<unsigned int, vector<measuredValue*>> values, map<unsi
 	vector<segment_points*> points_average = get_points_from_values(values_average, max_values, true);
 	vector<segment_peaks*> peaks = get_peaks(points, points_average);
 
-	for (size_t i = 0; i < points.size(); i++) {
+	/*for (size_t i = 0; i < points.size(); i++) {
 		//svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, row.first);
 		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks.at(i)->peaks, i);
-	}
+	}*/
 
 	freePoints(points);
 	freePoints(points_average);
@@ -91,6 +91,8 @@ void run() {
 
 	vector<measuredValue*> values = db->get_measured_value();
 
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
 	map<unsigned int, vector<measuredValue*>> values_map = transform_measured_value(values);
 	if (values_map.size() == 0) {
 		return;
@@ -102,6 +104,9 @@ void run() {
 	}
 	
 	printAllSegments(values_map, values_average);
+
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
 
 	freeMeasuredValues(values);
 	freeMapMeasuredValues(values_average);
@@ -116,8 +121,8 @@ int main()
 	_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
-	/*cout << "Please press any key to exit the program ..." << endl;
-	cin.get();*/
+	cout << "Please press any key to exit the program ..." << endl;
+	cin.get();
 
 	return 0;
 

@@ -7,10 +7,10 @@ bool compareBySum(const peak* a, const peak* b)
 	return a->sum > b->sum;
 }
 
-vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average) {
-	vector<segment_peaks*> results;
+segment_peaks** parallel_get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, size_t size) {
+	segment_peaks** data = (segment_peaks**)malloc(sizeof(segment_peaks*) * size);
 
-	for (size_t a = 0; a < points.size(); a++) {
+	tbb::parallel_for(size_t(0), size, [&](size_t a) {
 		vector<point*> segment = *(points.at(a)->points);
 
 		bool is_peak = false;
@@ -25,12 +25,11 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 			}
 
 			point* average_line = points_average.at(a)->points->at(i);
-			/*printf("1. %f\n", point_base_line->x);
-			printf("2. %f\n", average_line->x);*/
+
 			if (point_base_line->x != average_line->x) { // tato podminka je kvuli zacatku points vektoru, protoze obsahuje body, ktery points_average neobsahuje
 				continue;
 			}
-			
+
 			if (point_base_line->y <= average_line->y) {
 				if (!is_peak) {
 					temp_peak = point_base_line;
@@ -39,7 +38,6 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 					is_peak = true;
 				}
 				else {
-					//sum += point_base_line->ist - temp_peak->ist;
 					sum += abs(temp_peak->ist - point_base_line->ist);
 					grow += temp_peak->ist - point_base_line->ist;
 				}
@@ -58,7 +56,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 						temp->y2 = point_base_line->y;
 						temp->sum = sum;
 						peaks.push_back(temp);
-						
+
 					}
 					is_peak = false;
 				}
@@ -66,7 +64,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 			i++;
 		}
 		sort(peaks.begin(), peaks.end(), compareBySum);
-		
+
 		size_t peak_size = peaks.size() >= SHOW_PEAKS ? SHOW_PEAKS : peaks.size();
 		vector<peak*> *sort_peaks = new vector<peak*>(peak_size);
 		for (size_t i = 0; i < peaks.size(); i++) {
@@ -82,9 +80,18 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 		segment_peaks* seg_peaks = (segment_peaks*)malloc(sizeof(segment_peaks));
 		seg_peaks->peaks = sort_peaks;
 		seg_peaks->segmentid = points.at(a)->segmentid;
-		
-		results.push_back(seg_peaks);
-	}
+
+		data[a] = seg_peaks;
+	});
+
+	return data;
+}
+
+vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average) {
+	segment_peaks** data = parallel_get_peaks(points, points_average, points.size());
+	vector<segment_peaks*> results(data, data + points.size());
+
+	free(data);
 	return results;
 }
 

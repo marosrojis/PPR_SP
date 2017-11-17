@@ -22,6 +22,12 @@ typedef struct point
 	float ist;
 } POINT;
 
+typedef struct segment_points
+{
+	std::vector<point*> *points;
+	int segmentid;
+} SEGMENT_POINTS;
+
 typedef struct peak
 {
 	float x1;
@@ -30,5 +36,11 @@ typedef struct peak
 	float y2;
 	float sum;
 } PEAKS;
+
+typedef struct segment_peaks
+{
+	std::vector<peak*> *peaks;
+	int segmentid;
+} SEGMENT_PEAKS;
 
 #endif

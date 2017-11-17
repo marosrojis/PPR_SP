@@ -8,11 +8,11 @@ SVG::~SVG()
 {
 }
 
-void SVG::print_graph(vector<point*> values, vector<point*> values_average, vector<peak*> peaks, int segmentid) {
+void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, vector<peak*> *peaks, size_t segmentid) {
 	print_graph(values, values_average, peaks, segmentid, "rgb(0,0,0)", "rgb(0,0,255)");
 }
 
-void SVG::print_graph(vector<point*> values, vector<point*> values_average, vector<peak*> peaks, int segmentid, std::string color1, std::string color2) {
+void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, vector<peak*> *peaks, size_t segmentid, std::string color1, std::string color2) {
 	FILE * pFile;
 	std::stringstream ss;
 
@@ -20,7 +20,7 @@ void SVG::print_graph(vector<point*> values, vector<point*> values_average, vect
 	point* y_max = get_max_y_point(values);*/
 	point* x_max = (point*)malloc(sizeof(point));
 	point* y_max = (point*)malloc(sizeof(point));
-	find_max_x_y_points(values, x_max, y_max);
+	find_max_x_y_points(*values, x_max, y_max);
 
 	ss << "graph/test" << segmentid << ".svg";
 	errno_t err = fopen_s(&pFile, ss.str().c_str(), "w");
@@ -34,11 +34,11 @@ void SVG::print_graph(vector<point*> values, vector<point*> values_average, vect
 	printer.PushAttribute("width", x_max->x);
 	printer.PushAttribute("height", y_max->y + 25);
 
-	print_axis(&printer, values, x_max, y_max);
-	print_polynate(&printer, values, color1);
-	print_polynate(&printer, values_average, color2);
-	float average = print_average_line(&printer, values);
-	print_peaks(&printer, peaks, average);
+	print_axis(&printer, *values, x_max, y_max);
+	print_polynate(&printer, *values, color1);
+	print_polynate(&printer, *values_average, color2);
+	float average = print_average_line(&printer, *values);
+	print_peaks(&printer, *peaks, average);
 	
 	printer.CloseElement();
 	std::cout << printer.CStr();

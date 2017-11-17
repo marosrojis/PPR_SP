@@ -33,32 +33,35 @@ void freeMapMeasuredValues(map<unsigned int, vector<measuredValue*>> values) {
 	}
 }
 
-void freePoints(map<unsigned int, vector<point*>> points) {
+void freePoints(vector<segment_points*> points) {
 	for (auto &segment : points) {
-		for (auto &point : segment.second) {
+		for (auto &point : *(segment->points)) {
 			free(point);
 		}
+		delete(segment->points);
+		free(segment);
 	}
 }
 
-void freePeaks(map<unsigned int, vector<peak*>> peaks) {
+void freePeaks(vector<segment_peaks*> peaks) {
 	for (auto &segment : peaks) {
-		for (auto &peak : segment.second) {
+		for (auto &peak : *(segment->peaks)) {
 			free(peak);
 		}
+		delete(segment->peaks);
+		free(segment);
 	}
 }
 
 void printAllSegments(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
 	map<unsigned int, float> max_values = get_max_values(values);
-	map<unsigned int, vector<point*>> points = get_points_from_values(values, max_values);
-	map<unsigned int, vector<point*>> points_average = get_points_from_values(values_average, max_values);
-	map<unsigned int, vector<peak*>> peaks = get_peaks(points, points_average);
-	int i = 0;
-	for (auto &row : points) {
+	vector<segment_points*> points = get_points_from_values(values, max_values, false);
+	vector<segment_points*> points_average = get_points_from_values(values_average, max_values, true);
+	vector<segment_peaks*> peaks = get_peaks(points, points_average);
+
+	for (size_t i = 0; i < points.size(); i++) {
 		//svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, row.first);
-		svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, i);
-		i++;
+		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks.at(i)->peaks, i);
 	}
 
 	freePoints(points);

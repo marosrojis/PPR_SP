@@ -19,9 +19,9 @@
 
 using namespace std;
 
-map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> points, map<unsigned int, vector<point*>> points_average);
+vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average);
 map<unsigned int, float> get_max_values(map<unsigned int, vector<measuredValue*>> values);
-map<unsigned int, vector<point*>> get_points_from_values(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, float> max_values);
+vector<segment_points*> get_points_from_values(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, float> max_values, bool isAverage);
 map<unsigned int, vector<measuredValue*>> calculate_moving_average(map<unsigned int, vector<measuredValue*>> values_map);
 float get_max_value_ist(vector<measuredValue*> values);
 

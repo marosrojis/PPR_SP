@@ -17,8 +17,8 @@ class SVG
 public:
 	SVG();
 	~SVG();
-	void print_graph(vector<point*> values, vector<point*> values_average, vector<peak*> peaks, int segmentid);
-	void print_graph(vector<point*> values, vector<point*> values_average, vector<peak*> peaks, int segmentid, string color1, string color2);
+	void print_graph(vector<point*> *values, vector<point*> *values_average, vector<peak*> *peaks, size_t segmentid);
+	void print_graph(vector<point*> *values, vector<point*> *values_average, vector<peak*> *peaks, size_t segmentid, string color1, string color2);
 
 private:
 	void print_polynate(tinyxml2::XMLPrinter* printer, vector<point*> values, string color);

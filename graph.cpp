@@ -7,23 +7,26 @@ bool compareBySum(const peak* a, const peak* b)
 	return a->sum > b->sum;
 }
 
-map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> points, map<unsigned int, vector<point*>> points_average) {
-	map<unsigned int, vector<peak*>> results;
+vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average) {
+	vector<segment_peaks*> results;
 
-	for (auto &segment : points) {
-		
+	for (size_t a = 0; a < points.size(); a++) {
+		vector<point*> segment = *(points.at(a)->points);
+
 		bool is_peak = false;
 		float x_peak = 0, y_peak = 0;
 		float sum = 0, grow = 0;
 		point* temp_peak = nullptr;
 		size_t i = 0;
 		vector<peak*> peaks;
-		for (auto &point_base_line : segment.second) {
-			if (i >= points_average.find(segment.first)->second.size()) { // i je >= nez celkova velikost average vectoru, tak konec cyklu (uz neni kam sahat)
+		for (auto &point_base_line : segment) {
+			if (i >= points_average.at(a)->points->size()) { // i je >= nez celkova velikost average vectoru, tak konec cyklu (uz neni kam sahat)
 				break;
 			}
 
-			point* average_line = points_average.find(segment.first)->second.at(i);
+			point* average_line = points_average.at(a)->points->at(i);
+			/*printf("1. %f\n", point_base_line->x);
+			printf("2. %f\n", average_line->x);*/
 			if (point_base_line->x != average_line->x) { // tato podminka je kvuli zacatku points vektoru, protoze obsahuje body, ktery points_average neobsahuje
 				continue;
 			}
@@ -46,18 +49,7 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 					if (point_base_line->x - x_peak >= MIN_SECOND_FOR_ACTION && grow < 3) {
 						peak* temp = (peak*)malloc(sizeof(peak));
 						if (temp == NULL) {
-							for (size_t i = 0; i < peaks.size(); i++) {
-								free(peaks.at(i));
-							}
-							for (auto &segment : results) {
-								for (auto &peak : segment.second) {
-									free(peak);
-								}
-							}
-
-							printf("Malloc memory error\n");
-							map<unsigned int, vector<peak*>> free_results;
-							return free_results;
+							//TODO
 						}
 
 						temp->x1 = temp_peak->x;
@@ -78,18 +70,23 @@ map<unsigned int, vector<peak*>> get_peaks(map<unsigned int, vector<point*>> poi
 		/*if (peaks.size() > SHOW_PEAKS) {
 			peaks.erase(peaks.begin() + SHOW_PEAKS, peaks.end());
 		}*/
-		vector<peak*> sort_peaks;
+		size_t peak_size = peaks.size() >= SHOW_PEAKS ? SHOW_PEAKS : peaks.size();
+		vector<peak*> *sort_peaks = new vector<peak*>(peak_size);
 		for (size_t i = 0; i < peaks.size(); i++) {
 			peak* tmp = peaks.at(i);
-			if (i < SHOW_PEAKS) {
-				sort_peaks.push_back(tmp);
+			if (i < peak_size) {
+				(*sort_peaks)[i] = tmp;
 			}
 			else {
 				free(tmp);
 			}
 		}
 
-		results[segment.first] = sort_peaks;
+		segment_peaks* seg_peaks = (segment_peaks*)malloc(sizeof(segment_peaks));
+		seg_peaks->peaks = sort_peaks;
+		seg_peaks->segmentid = points.at(a)->segmentid;
+		
+		results.push_back(seg_peaks);
 	}
 	return results;
 }
@@ -104,40 +101,35 @@ map<unsigned int, float> get_max_values(map<unsigned int, vector<measuredValue*>
 	return results;
 }
 
-map<unsigned int, vector<point*>> get_points_from_values(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, float> max_values) {
-	map<unsigned int, vector<point*>> results;
-
+vector<segment_points*> get_points_from_values(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, float> max_values, bool isAverage) {
+	vector<segment_points*> results;
 	for (auto &row : values) {
-		vector<point*> points;
+		size_t i = 0;
+		size_t vectorSize = (isAverage ? row.second.size() - MOVING_AVERAGE + 1: row.second.size());
+
+		vector<point*> *points = new vector<point*>(vectorSize);
 
 		unsigned int lastSecond = row.second.at(0)->second;
 		for (auto &value : row.second) {
 			if (value->ist != NULL) {
 				point* temp = (point *)malloc(sizeof(point));
 				if (temp == NULL) {
-					for (size_t i = 0; i < points.size(); i++) {
-						free(points.at(i));
-					}
-					for (auto &segment : results) {
-						for (auto &point : segment.second) {
-							free(point);
-						}
-					}
-
-					printf("Malloc memory error\n");
-					map<unsigned int, vector<point*>> free_results;
-					return free_results;
+					//TODO
 				}
 				temp->x = static_cast<float>((value->second - lastSecond) / MINUTE);
 				temp->y = (max_values.find(row.first)->second - value->ist) * Y_SCALE;
 				temp->second = value->second_of_day;
 				temp->ist = value->ist;
-				points.push_back(temp);
+				(*points)[i] = temp;
+				i++;
 			}
 		}
-		results[row.first] = points;
+		segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
+		seg_points->points = points;
+		seg_points->segmentid = row.first;
+		results.push_back(seg_points);
 	}
-	
+
 	return results;
 }
 

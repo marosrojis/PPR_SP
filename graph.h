@@ -8,13 +8,12 @@
 #include <algorithm>
 #include "structs.h"
 #include "tbb/parallel_for.h"
-#include "tbb/blocked_range.h"
 
 
 #define MOVING_AVERAGE 21
 #define Y_SCALE 30
 #define MINUTE 60
-#define MIN_SECOND_FOR_ACTION 30
+#define MIN_MINUTE_FOR_ACTION 30
 #define SHOW_PEAKS 6
 
 using namespace std;

@@ -46,7 +46,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 			}
 			else {
 				if (is_peak) {
-					if (point_base_line->x - x_peak >= MIN_SECOND_FOR_ACTION && grow < 3) {
+					if (point_base_line->x - x_peak >= MIN_MINUTE_FOR_ACTION && grow < 3) {
 						peak* temp = (peak*)malloc(sizeof(peak));
 						if (temp == NULL) {
 							//TODO
@@ -67,9 +67,6 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 		}
 		sort(peaks.begin(), peaks.end(), compareBySum);
 		
-		/*if (peaks.size() > SHOW_PEAKS) {
-			peaks.erase(peaks.begin() + SHOW_PEAKS, peaks.end());
-		}*/
 		size_t peak_size = peaks.size() >= SHOW_PEAKS ? SHOW_PEAKS : peaks.size();
 		vector<peak*> *sort_peaks = new vector<peak*>(peak_size);
 		for (size_t i = 0; i < peaks.size(); i++) {
@@ -133,40 +130,49 @@ vector<segment_points*> get_points_from_values(map<unsigned int, vector<measured
 	return results;
 }
 
+measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values, int moving_average_size, size_t size)
+{
+	measuredValue** data = (measuredValue**)malloc(sizeof(measuredValue*) * size);
+
+	tbb::parallel_for(size_t(0), size, [&](size_t i)
+	{
+		float sum = 0;
+		measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
+		if (value == NULL) {
+			return;
+		}
+		if (i < moving_average_size || i + moving_average_size >= size) {
+			value->ist = NULL;
+		}
+		else {
+			for (int y = -moving_average_size; y <= moving_average_size; y++) {
+				sum += values.at(i + y)->ist;
+			}
+			value->ist = sum / MOVING_AVERAGE;
+		}
+
+		measuredValue* segment_value = values.at(i);
+		value->day = segment_value->day;
+		value->second = segment_value->second;
+		value->segmentid = segment_value->segmentid;
+		sum = 0;
+		data[i] = value;
+	});
+
+	return data;
+}
+
 map<unsigned int, vector<measuredValue*>> calculate_moving_average(map<unsigned int, vector<measuredValue*>> values_map) {
 	map<unsigned int, vector<measuredValue*>> results;
 	float sum = 0;
 
 	int size = (int)MOVING_AVERAGE / 2;
-	
+
 	for (auto &row : values_map) {
-
-		vector<measuredValue*> temp;
+		measuredValue** data = parallel_calculate_moving_average(row.second, size, row.second.size());
+		vector<measuredValue*> temp(data, data + row.second.size());
 		results[row.first] = temp;
-
-		for (size_t i = 0; i < row.second.size(); i++) {
-			measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
-			if (value == NULL) {
-				map<unsigned int, vector<measuredValue*>> free_results;
-				return free_results;
-			}
-			if (i < size || i + size >= row.second.size()) {
-				value->ist = NULL;
-			}
-			else {
-				for (int y = -size; y <= size; y++) {
-					sum += row.second.at(i + y)->ist;
-				}
-				value->ist = sum / MOVING_AVERAGE;
-			}
-
-			measuredValue* segment_value = row.second.at(i);
-			value->day = segment_value->day;
-			value->second = segment_value->second;
-			value->segmentid = segment_value->segmentid;
-			results.find(row.first)->second.push_back(value);
-			sum = 0;
-		}
+		free(data);
 	}
 
 	return results;

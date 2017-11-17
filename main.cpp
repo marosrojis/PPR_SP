@@ -7,6 +7,7 @@
 #include "database.h"
 #include "graph.h"
 #include "svg.h"
+#include "opencl_main.h"
 #include "tinyxml2.h"
 
 #define _CRTDBG_MAP_ALLOC
@@ -116,9 +117,11 @@ void run() {
 
 int main()
 {
-	run();
+	//run();
 
-	_CrtDumpMemoryLeaks();
+	opencl_main_test();
+
+	//_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
 	cout << "Please press any key to exit the program ..." << endl;

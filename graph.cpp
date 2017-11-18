@@ -52,8 +52,6 @@ segment_peaks** parallel_get_peaks(vector<segment_points*> points, vector<segmen
 
 						temp->x1 = temp_peak->x;
 						temp->x2 = point_base_line->x;
-						temp->y1 = temp_peak->x;
-						temp->y2 = point_base_line->y;
 						temp->sum = sum;
 						peaks.push_back(temp);
 
@@ -125,7 +123,6 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 					is_peak = true;
 				}
 				else {
-					//sum += point_base_line->ist - temp_peak->ist;
 					sum += abs(temp_peak->ist - point_base_line->ist);
 					grow += temp_peak->ist - point_base_line->ist;
 				}
@@ -140,8 +137,6 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 
 						temp->x1 = temp_peak->x;
 						temp->x2 = point_base_line->x;
-						temp->y1 = temp_peak->x;
-						temp->y2 = point_base_line->y;
 						temp->sum = sum;
 						peaks.push_back(temp);
 

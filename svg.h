@@ -22,10 +22,9 @@ public:
 
 private:
 	void print_polynate(tinyxml2::XMLPrinter* printer, vector<point*> values, string color);
-	void print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, float average);
+	void print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks);
 	void print_border(tinyxml2::XMLPrinter* printer);
 	void print_axis(tinyxml2::XMLPrinter* printer, vector<point*> values, point* x_max, point* y_max);
-	float print_average_line(tinyxml2::XMLPrinter* printer, vector<point*> points);
 };
 
 #endif

@@ -57,12 +57,12 @@ void printAllSegments(map<unsigned int, vector<measuredValue*>> values, map<unsi
 	map<unsigned int, float> max_values = get_max_values(values);
 	vector<segment_points*> points = get_points_from_values(values, max_values, false);
 	vector<segment_points*> points_average = get_points_from_values(values_average, max_values, true);
-	vector<segment_peaks*> peaks = get_peaks(points, points_average);
+	vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average);
 
-	/*for (size_t i = 0; i < points.size(); i++) {
+	for (size_t i = 0; i < points.size(); i++) {
 		//svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, row.first);
 		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks.at(i)->peaks, i);
-	}*/
+	}
 
 	freePoints(points);
 	freePoints(points_average);
@@ -98,7 +98,7 @@ void run() {
 		return;
 	}
 
-	map<unsigned int, vector<measuredValue*>> values_average = calculate_moving_average(values_map);
+	map<unsigned int, vector<measuredValue*>> values_average = calculate_moving_average_tbb(values_map);
 	if (values_average.size() == 0) {
 		return;
 	}

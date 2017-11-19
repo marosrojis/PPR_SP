@@ -2,8 +2,7 @@
 
 using namespace std;
 
-bool compareBySum(const peak* a, const peak* b)
-{
+bool compareBySum(const peak* a, const peak* b) {
 	return a->sum > b->sum;
 }
 
@@ -14,7 +13,6 @@ segment_peaks** parallel_get_peaks(vector<segment_points*> points, vector<segmen
 		vector<point*> segment = *(points.at(a)->points);
 
 		bool is_peak = false;
-		float x_peak = 0, y_peak = 0;
 		float sum = 0, grow = 0;
 		point* temp_peak = nullptr;
 		size_t i = 0;
@@ -44,7 +42,7 @@ segment_peaks** parallel_get_peaks(vector<segment_points*> points, vector<segmen
 			}
 			else {
 				if (is_peak) {
-					if (point_base_line->x - x_peak >= MIN_MINUTE_FOR_ACTION && grow < 3) {
+					if (point_base_line->x - temp_peak->x >= MIN_MINUTE_FOR_ACTION && grow < 3) {
 						peak* temp = (peak*)malloc(sizeof(peak));
 						if (temp == NULL) {
 							//TODO
@@ -100,7 +98,6 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 		vector<point*> segment = *(points.at(a)->points);
 
 		bool is_peak = false;
-		float x_peak = 0, y_peak = 0;
 		float sum = 0, grow = 0;
 		point* temp_peak = nullptr;
 		size_t i = 0;
@@ -129,7 +126,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 			}
 			else {
 				if (is_peak) {
-					if (point_base_line->x - x_peak >= MIN_MINUTE_FOR_ACTION && grow < 3) {
+					if (point_base_line->x - temp_peak->x >= MIN_MINUTE_FOR_ACTION && grow < 3) {
 						peak* temp = (peak*)malloc(sizeof(peak));
 						if (temp == NULL) {
 							//TODO

@@ -21,12 +21,16 @@
   <ItemGroup>
     <ClCompile Include="database.cpp" />
     <ClCompile Include="graph.cpp" />
+    <ClCompile Include="graph_opencl.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="opencl_main.cpp" />
     <ClCompile Include="svg.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="graph_opencl.h" />
+    <ClInclude Include="opencl_main.h" />
     <ClInclude Include="structs.h" />
     <ClInclude Include="database.h" />
     <ClInclude Include="graph.h" />
@@ -109,11 +113,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeedHighLevel</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(TBB_CONFIG)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(TBB_CONFIG)\include;$(INTELOCLSDKROOT)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>c:\Temp\Dropbox\PRG\C++\PPR\PPR\libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(TBB_CONFIG)\lib\intel64_win\vc14;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>c:\Temp\Dropbox\PRG\C++\PPR\PPR\libs\sqlite3.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(TBB_CONFIG)\lib\intel64_win\vc14;$(INTELOCLSDKROOT)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -136,13 +140,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(TBB_CONFIG)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(TBB_CONFIG)\include;$(INTELOCLSDKROOT)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>c:\Temp\Dropbox\PRG\C++\PPR\PPR\libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(TBB_CONFIG)\lib\intel64_win\vc14;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>c:\Temp\Dropbox\PRG\C++\PPR\PPR\libs\sqlite3.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(TBB_CONFIG)\lib\intel64_win\vc14;$(INTELOCLSDKROOT)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

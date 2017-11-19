@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __COLUMNS_TYPE__
-#define __COLUMNS_TYPE__
+#ifndef __STRUCTS__
+#define __STRUCTS__
 
 #include <stdlib.h>
 

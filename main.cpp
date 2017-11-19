@@ -7,7 +7,10 @@
 #include "database.h"
 #include "graph.h"
 #include "svg.h"
+#include "opencl_main.h"
 #include "tinyxml2.h"
+
+#include "graph_opencl.h"
 
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -53,17 +56,23 @@ void freePeaks(vector<segment_peaks*> peaks) {
 	}
 }
 
-void printAllSegments(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
-	map<unsigned int, float> max_values = get_max_values(values);
-	vector<segment_points*> points = get_points_from_values(values, max_values, false);
-	vector<segment_points*> points_average = get_points_from_values(values_average, max_values, true);
-	vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average);
-
+void printAllSegments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks) {
 	for (size_t i = 0; i < points.size(); i++) {
 		//svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, row.first);
 		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks.at(i)->peaks, i);
 	}
+}
 
+void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
+	map<unsigned int, float> max_values = get_max_values(values);
+	vector<segment_points*> points = get_points_from_values(values, max_values, false);
+	vector<segment_points*> points_average = get_points_from_values(values_average, max_values, true);
+	//vector<segment_peaks*> peaks = get_peaks(points, points_average);
+
+	vector<segment_peaks*> peaks = get_peaks_opencl(points, points_average);
+
+	printAllSegments(points, points_average, peaks);
+	
 	freePoints(points);
 	freePoints(points_average);
 	freePeaks(peaks);
@@ -103,7 +112,7 @@ void run() {
 		return;
 	}
 	
-	printAllSegments(values_map, values_average);
+	get_calculate_point(values_map, values_average);
 
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;

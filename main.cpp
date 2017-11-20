@@ -46,6 +46,13 @@ void freePoints(vector<segment_points*> points) {
 	}
 }
 
+void freeSegmentPoints(vector<segment_points*> points) {
+	for (auto &segment : points) {
+		delete(segment->points);
+		free(segment);
+	}
+}
+
 void freePeaks(vector<segment_peaks*> peaks) {
 	for (auto &segment : peaks) {
 		for (auto &peak : *(segment->peaks)) {
@@ -56,26 +63,45 @@ void freePeaks(vector<segment_peaks*> peaks) {
 	}
 }
 
-void printAllSegments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks) {
+void printAllSegments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+	size_t peak_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
-		//svg->print_graph(row.second, points_average.find(row.first)->second, peaks.find(row.first)->second, row.first);
-		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks.at(i)->peaks, i);
+		size_t peaks_start_index = peak_segment_position[i];
+		size_t peaks_end_index = (i == points.size() - 1) ? peaks.size() - 1 : peak_segment_position[i + 1];
+		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks, peaks_start_index, peaks_end_index, i);
+	}
+}
+
+void printAllSplitSegments(vector<segment_points*> points, vector<segment_points*> points_by_day, vector<segment_peaks*> peaks) {
+	size_t peak_position = 0, points_position = 0;
+	for (size_t i = 0; i < points.size(); i++) {
+		svg->print_graph_split_segment(points.at(i)->points, points_by_day, &points_position, peaks, &peak_position, points.at(i)->segmentid);
 	}
 }
 
 void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
+	bool splitSegment = false;
+	
 	map<unsigned int, float> max_values = get_max_values(values);
 	vector<segment_points*> points = get_points_from_values(values, max_values, false);
 	vector<segment_points*> points_average = get_points_from_values(values_average, max_values, true);
-	//vector<segment_peaks*> peaks = get_peaks(points, points_average);
+	vector<segment_points*> points_by_day = split_segments_by_day(points);
 
-	vector<segment_peaks*> peaks = get_peaks_opencl(points, points_average);
+	size_t* peak_segment_position = (size_t*)malloc(sizeof(size_t) * points.size());
 
-	printAllSegments(points, points_average, peaks);
+	vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
+
+	if (splitSegment) {
+		printAllSplitSegments(points, points_by_day, peaks);
+	}
+	else {
+		printAllSegments(points, points_average, peaks, peak_segment_position);
+	}
 	
 	freePoints(points);
 	freePoints(points_average);
 	freePeaks(peaks);
+	freeSegmentPoints(points_by_day);
 }
 
 map<unsigned int, vector<measuredValue*>> transform_measured_value(vector<measuredValue*> values) {

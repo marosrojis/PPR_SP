@@ -8,16 +8,10 @@ SVG::~SVG()
 {
 }
 
-void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, vector<peak*> *peaks, size_t segmentid) {
-	print_graph(values, values_average, peaks, segmentid, "rgb(0,0,0)", "rgb(0,0,255)");
-}
-
-void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, vector<peak*> *peaks, size_t segmentid, std::string color1, std::string color2) {
+void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, vector<segment_peaks*> peaks, size_t peaks_start_index, size_t peaks_end_index, size_t segmentid) {
 	FILE * pFile;
 	std::stringstream ss;
 
-	/*point* x_max = get_max_x_point(values);
-	point* y_max = get_max_y_point(values);*/
 	point* x_max = (point*)malloc(sizeof(point));
 	point* y_max = (point*)malloc(sizeof(point));
 	find_max_x_y_points(*values, x_max, y_max);
@@ -35,12 +29,56 @@ void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, ve
 	printer.PushAttribute("height", y_max->y + 25);
 
 	print_axis(&printer, *values, x_max, y_max);
-	print_polynate(&printer, *values, color1);
-	print_polynate(&printer, *values_average, color2);
-	print_peaks(&printer, *peaks);
+	print_polynate(&printer, *values, "rgb(0,0,0)");
+	print_polynate(&printer, *values_average, "rgb(0,0,255)");
+	
+	for (size_t i = peaks_start_index; i < peaks_end_index; i++) {
+		print_peaks(&printer, *(peaks.at(i)->peaks));
+	}
 	
 	printer.CloseElement();
 	std::cout << printer.CStr();
+
+	free(x_max);
+	free(y_max);
+}
+
+void SVG::print_graph_split_segment(vector<point*> *points, vector<segment_points*> points_by_day, size_t* point_position, vector<segment_peaks*> peaks, size_t* peak_position, size_t segmentid) {
+	FILE * pFile;
+	std::stringstream ss;
+
+	point* x_max = (point*)malloc(sizeof(point));
+	point* y_max = (point*)malloc(sizeof(point));
+	find_max_x_y_points(*points, x_max, y_max);
+
+	size_t days_in_segment = 0, y = 0;
+	while (segmentid == points_by_day.at(*point_position + y)->segmentid) {
+		days_in_segment++;
+		y++;
+	}
+	for (size_t i = 0; i < days_in_segment; i++) {
+		(*point_position)++;
+	}
+	printf("");
+	
+	/*ss << "graph/test" << segmentid << ".svg";
+	errno_t err = fopen_s(&pFile, ss.str().c_str(), "w");
+	tinyxml2::XMLPrinter printer(pFile);
+	printer.PushDeclaration("xml version=\"1.0\" standalone=\"no\"");
+	printer.PushUnknown("DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"");
+	printer.OpenElement("svg");
+	printer.PushAttribute("xmlns", "http://www.w3.org/2000/svg");
+	printer.PushAttribute("version", "1.1");
+	printer.PushAttribute("style", "padding: 15px 0 15px 50px");
+	printer.PushAttribute("width", x_max->x);
+	printer.PushAttribute("height", (y_max->y + 25) * days_in_segment);
+
+	print_axis(&printer, *points, x_max, y_max);
+	print_polynate(&printer, *values, "rgb(0,0,0)");
+	print_peaks(&printer, *points);
+
+	printer.CloseElement();
+	std::cout << printer.CStr();*/
 
 	free(x_max);
 	free(y_max);

@@ -6,6 +6,29 @@ bool compareBySum(const peak* a, const peak* b) {
 	return a->sum > b->sum;
 }
 
+segment_peaks* create_segment_peaks(vector<peak*> *peaks, vector<segment_points*> points, size_t segmentid) {
+	vector<peak*> peaks_in_day = *peaks;
+	sort(peaks_in_day.begin(), peaks_in_day.end(), compareBySum);
+
+	size_t peak_size = peaks_in_day.size() >= SHOW_PEAKS ? SHOW_PEAKS : peaks_in_day.size();
+	vector<peak*> *sort_peaks = new vector<peak*>(peak_size);
+	for (size_t i = 0; i < peaks_in_day.size(); i++) {
+		peak* tmp = peaks_in_day.at(i);
+		if (i < peak_size) {
+			(*sort_peaks)[i] = tmp;
+		}
+		else {
+			free(tmp);
+		}
+	}
+
+	segment_peaks* seg_peaks = (segment_peaks*)malloc(sizeof(segment_peaks));
+	seg_peaks->peaks = sort_peaks;
+	seg_peaks->segmentid = segmentid;
+
+	return seg_peaks;
+}
+
 segment_peaks** parallel_get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, size_t size) {
 	segment_peaks** data = (segment_peaks**)malloc(sizeof(segment_peaks*) * size);
 
@@ -91,8 +114,9 @@ vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segm
 	return results;
 }
 
-vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average) {
+vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** segments_position) {
 	vector<segment_peaks*> results;
+	size_t seg_day = 0;
 
 	for (size_t a = 0; a < points.size(); a++) {
 		vector<point*> segment = *(points.at(a)->points);
@@ -143,25 +167,32 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 			}
 			i++;
 		}
-		sort(peaks.begin(), peaks.end(), compareBySum);
-
-		size_t peak_size = peaks.size() >= SHOW_PEAKS ? SHOW_PEAKS : peaks.size();
-		vector<peak*> *sort_peaks = new vector<peak*>(peak_size);
-		for (size_t i = 0; i < peaks.size(); i++) {
-			peak* tmp = peaks.at(i);
-			if (i < peak_size) {
-				(*sort_peaks)[i] = tmp;
+		
+		(*segments_position)[a] = results.size();
+		while (points.at(a)->segmentid != points_by_day.at(seg_day)->segmentid) {
+			seg_day++;
+		}
+		vector<peak*> peaks_in_day;
+		for (auto &peak_seg : peaks) {
+			float start_day = points_by_day.at(seg_day)->points->at(0)->x;
+			float end_day = points_by_day.at(seg_day)->points->at(points_by_day.at(seg_day)->points->size() - 1)->x;
+			if (peak_seg->x1 >= start_day && peak_seg->x1 <= end_day) {
+				peaks_in_day.push_back(peak_seg);
 			}
-			else {
-				free(tmp);
+			else if (peaks_in_day.size() != 0) {
+				segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points, points.at(a)->segmentid);
+				peaks_in_day.clear();
+				results.push_back(seg_peaks);
+				seg_day++;
 			}
 		}
 
-		segment_peaks* seg_peaks = (segment_peaks*)malloc(sizeof(segment_peaks));
-		seg_peaks->peaks = sort_peaks;
-		seg_peaks->segmentid = points.at(a)->segmentid;
-
-		results.push_back(seg_peaks);
+		if (peaks_in_day.size() != 0) {
+			segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points, points.at(a)->segmentid);
+			peaks_in_day.clear();
+			results.push_back(seg_peaks);
+			seg_day++;
+		}
 	}
 	return results;
 }
@@ -171,6 +202,42 @@ map<unsigned int, float> get_max_values(map<unsigned int, vector<measuredValue*>
 	for (auto &value : values) {
 		float max_value = get_max_value_ist(value.second);
 		results[value.first] = max_value;
+	}
+
+	return results;
+}
+
+vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) {
+	vector<segment_points*> results;
+
+	for (auto &row : segments) {
+		size_t i = 0;
+		size_t vectorSize = row->points->size();
+		vector<point*> *points = new vector<point*>(vectorSize);
+
+		int64_t lastDay = row->points->at(0)->second;
+		for (size_t y = 0; y < row->points->size(); y++) {
+			point* value = row->points->at(y);		
+
+				if (lastDay > value->second) {
+					points->resize(i);
+					segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
+					seg_points->points = points;
+					seg_points->segmentid = row->segmentid;
+					results.push_back(seg_points);
+
+					vectorSize -= i;
+					points = new vector<point*>(vectorSize);
+					i = 0;
+				}
+				(*points)[i] = value;
+				i++;
+				lastDay = value->second;
+		}
+		segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
+		seg_points->points = points;
+		seg_points->segmentid = row->segmentid;
+		results.push_back(seg_points);
 	}
 
 	return results;
@@ -195,6 +262,7 @@ vector<segment_points*> get_points_from_values(map<unsigned int, vector<measured
 				temp->y = (max_values.find(row.first)->second - value->ist) * Y_SCALE;
 				temp->second = value->second_of_day;
 				temp->ist = value->ist;
+				
 				(*points)[i] = temp;
 				i++;
 			}

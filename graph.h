@@ -11,16 +11,17 @@
 
 
 #define MOVING_AVERAGE 21
-#define Y_SCALE 30
+#define Y_SCALE 15
 #define MINUTE 60
 #define MIN_MINUTE_FOR_ACTION 30
-#define SHOW_PEAKS 6
+#define SHOW_PEAKS 3
 
 using namespace std;
 
 vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segment_points*> points_average);
-vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average);
+vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position);
 map<unsigned int, float> get_max_values(map<unsigned int, vector<measuredValue*>> values);
+vector<segment_points*> split_segments_by_day(vector<segment_points*> segments);
 vector<segment_points*> get_points_from_values(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, float> max_values, bool isAverage);
 map<unsigned int, vector<measuredValue*>> calculate_moving_average_tbb(map<unsigned int, vector<measuredValue*>> values_map);
 map<unsigned int, vector<measuredValue*>> calculate_moving_average(map<unsigned int, vector<measuredValue*>> values_map);

@@ -15,7 +15,7 @@
 
 #define MOVING_AVERAGE 21
 #define MIN_MINUTE_FOR_ACTION 30
-#define SHOW_PEAKS 6
+#define SHOW_PEAKS 3
 #define MAX_SOURCE_SIZE (0x100000)
 
 using namespace std;

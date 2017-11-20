@@ -26,16 +26,24 @@ point* get_max_y_point(vector<point*> values) {
 	return point_max;
 }
 
-void find_max_x_y_points(vector<point*> values, point* x_point, point* y_point) {
-	float x_max = 0, y_max = 0;
+void find_max_min_x_y_points(vector<point*> values, point* x_max_point, point* y_max_point, point* x_min_point, point* y_min_point) {
+	float x_max = 0, y_max = 0, x_min = values.at(0)->x, y_min = values.at(0)->y;
 	for (auto & value : values) {
 		if (x_max < value->x) {
 			x_max = value->x;
-			memcpy(x_point, value, sizeof(point));
+			memcpy(x_max_point, value, sizeof(point));
 		}
 		if (y_max < value->y) {
 			y_max = value->y;
-			memcpy(y_point, value, sizeof(point));
+			memcpy(y_max_point, value, sizeof(point));
+		}
+		if (x_min > value->x) {
+			x_min = value->x;
+			memcpy(x_min_point, value, sizeof(point));
+		}
+		if (y_min > value->y) {
+			y_min = value->y;
+			memcpy(y_min_point, value, sizeof(point));
 		}
 	}
 }

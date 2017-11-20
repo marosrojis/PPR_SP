@@ -68,7 +68,7 @@ void printAllSegments(vector<segment_points*> points, vector<segment_points*> po
 	for (size_t i = 0; i < points.size(); i++) {
 		size_t peaks_start_index = peak_segment_position[i];
 		size_t peaks_end_index = (i == points.size() - 1) ? peaks.size() - 1 : peak_segment_position[i + 1];
-		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks, peaks_start_index, peaks_end_index, i);
+		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks, peaks_start_index, peaks_end_index, points.at(i)->segmentid);
 	}
 }
 
@@ -156,8 +156,8 @@ int main()
 	_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
-	cout << "Please press any key to exit the program ..." << endl;
-	cin.get();
+	/*cout << "Please press any key to exit the program ..." << endl;
+	cin.get();*/
 
 	return 0;
 

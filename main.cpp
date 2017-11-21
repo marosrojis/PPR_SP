@@ -67,7 +67,7 @@ void printAllSegments(vector<segment_points*> points, vector<segment_points*> po
 	size_t peak_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
 		size_t peaks_start_index = peak_segment_position[i];
-		size_t peaks_end_index = (i == points.size() - 1) ? peaks.size() - 1 : peak_segment_position[i + 1];
+		size_t peaks_end_index = (i == points.size() - 1) ? peaks.size() : peak_segment_position[i + 1];
 		svg->print_graph(points.at(i)->points, points_average.at(i)->points, peaks, peaks_start_index, peaks_end_index, points.at(i)->segmentid);
 	}
 }
@@ -89,7 +89,8 @@ void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<u
 
 	size_t* peak_segment_position = (size_t*)malloc(sizeof(size_t) * points.size());
 
-	vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
+	//vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
+	vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
 
 	if (splitSegment) {
 		printAllSplitSegments(points, points_by_day, peaks);
@@ -102,6 +103,7 @@ void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<u
 	freePoints(points_average);
 	freePeaks(peaks);
 	freeSegmentPoints(points_by_day);
+	free(peak_segment_position);
 }
 
 map<unsigned int, vector<measuredValue*>> transform_measured_value(vector<measuredValue*> values) {
@@ -156,8 +158,8 @@ int main()
 	_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
-	/*cout << "Please press any key to exit the program ..." << endl;
-	cin.get();*/
+	cout << "Please press any key to exit the program ..." << endl;
+	cin.get();
 
 	return 0;
 

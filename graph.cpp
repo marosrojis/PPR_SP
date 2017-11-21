@@ -71,8 +71,8 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 							//TODO
 						}
 
-						temp->x1 = temp_peak->x;
-						temp->x2 = point_base_line->x;
+						temp->x1 = temp_peak;
+						temp->x2 = point_base_line;
 						temp->sum = sum;
 						peaks.push_back(temp);
 
@@ -92,7 +92,7 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 		for (auto &peak_seg : peaks) {
 			float start_day = points_by_day.at(seg_day)->points->at(0)->x;
 			float end_day = points_by_day.at(seg_day)->points->at(points_by_day.at(seg_day)->points->size() - 1)->x;
-			if (peak_seg->x1 >= start_day && peak_seg->x1 <= end_day) {
+			if (peak_seg->x1->x >= start_day && peak_seg->x1->x <= end_day) {
 				peaks_in_day.push_back(peak_seg);
 			}
 			else if (peaks_in_day.size() != 0) {
@@ -189,8 +189,8 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 							//TODO
 						}
 
-						temp->x1 = temp_peak->x;
-						temp->x2 = point_base_line->x;
+						temp->x1 = temp_peak;
+						temp->x2 = point_base_line;
 						temp->sum = sum;
 						peaks.push_back(temp);
 
@@ -209,7 +209,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 		for (auto &peak_seg : peaks) {
 			float start_day = points_by_day.at(seg_day)->points->at(0)->x;
 			float end_day = points_by_day.at(seg_day)->points->at(points_by_day.at(seg_day)->points->size() - 1)->x;
-			if (peak_seg->x1 >= start_day && peak_seg->x1 <= end_day) {
+			if (peak_seg->x1->x >= start_day && peak_seg->x1->x <= end_day) {
 				peaks_in_day.push_back(peak_seg);
 			}
 			else if (peaks_in_day.size() != 0) {

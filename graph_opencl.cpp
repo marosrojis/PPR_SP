@@ -4,7 +4,7 @@ using namespace std;
 
 size_t do_opencl_peaks(int count_point_values, int count_point_average_values, int *count_segments, int* segment_positions,
 	float* p_x, float* p_y, float* p_ist, float* pa_x, float* pa_y,
-	int* result_count_peaks, float* peak_x1, float* peak_x2, float* peak_sum) {
+	int* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum) {
 
 	// Load the kernel source code into the array source_str
 	FILE *fp;
@@ -45,8 +45,8 @@ size_t do_opencl_peaks(int count_point_values, int count_point_average_values, i
 	cl_mem pa_y_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_average_values * sizeof(float), NULL, &ret);
 
 	cl_mem result_count_peaks_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, *count_segments * sizeof(int), NULL, &ret);
-	cl_mem peak_x1_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(float), NULL, &ret);
-	cl_mem peak_x2_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(float), NULL, &ret);
+	cl_mem peak_x1_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
+	cl_mem peak_x2_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
 	cl_mem peak_sum_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(float), NULL, &ret);
 
 	// Copy the lists A and B to their respective memory buffers
@@ -117,8 +117,8 @@ size_t do_opencl_peaks(int count_point_values, int count_point_average_values, i
 
 	// Read the memory buffer C on the device to the local variable C
 	ret = clEnqueueReadBuffer(command_queue, result_count_peaks_mem_obj, CL_TRUE, 0, *count_segments * sizeof(int), result_count_peaks, 0, NULL, NULL);
-	ret = clEnqueueReadBuffer(command_queue, peak_x1_mem_obj, CL_TRUE, 0, count_point_values * sizeof(float), peak_x1, 0, NULL, NULL);
-	ret = clEnqueueReadBuffer(command_queue, peak_x2_mem_obj, CL_TRUE, 0, count_point_values * sizeof(float), peak_x2, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(command_queue, peak_x1_mem_obj, CL_TRUE, 0, count_point_values * sizeof(size_t), peak_x1, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(command_queue, peak_x2_mem_obj, CL_TRUE, 0, count_point_values * sizeof(size_t), peak_x2, 0, NULL, NULL);
 	ret = clEnqueueReadBuffer(command_queue, peak_sum_mem_obj, CL_TRUE, 0, count_point_values * sizeof(float), peak_sum, 0, NULL, NULL);
 
 	// Clean up
@@ -180,7 +180,7 @@ void get_segments_info(vector<segment_points*> points, float* x_values, float* y
 }
 
 vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segment_points*> points_by_day, 
-	int* result_count_peaks, float* peak_x1, float* peak_x2, float* peak_sum, int* segment_positions, size_t** result_segments_position) {
+	int* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum, int* segment_positions, size_t** result_segments_position) {
 	vector<segment_peaks*> results;
 	size_t seg_day = 0;
 
@@ -188,8 +188,8 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 		vector<peak*> peaks;
 		for (size_t y = 0; y < result_count_peaks[i]; y++) {
 			peak* tmp_peak = (peak*)malloc(sizeof(peak));
-			tmp_peak->x1 = peak_x1[segment_positions[i] + y];
-			tmp_peak->x2 = peak_x2[segment_positions[i] + y];
+			tmp_peak->x1 = points.at(i)->points->at(peak_x1[segment_positions[i] + y]);
+			tmp_peak->x2 = points.at(i)->points->at(peak_x2[segment_positions[i] + y]);
 			tmp_peak->sum = peak_sum[segment_positions[i] + y];
 			peaks.push_back(tmp_peak);
 		}
@@ -202,7 +202,7 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 		for (auto &peak_seg : peaks) {
 			float start_day = points_by_day.at(seg_day)->points->at(0)->x;
 			float end_day = points_by_day.at(seg_day)->points->at(points_by_day.at(seg_day)->points->size() - 1)->x;
-			if (peak_seg->x1 >= start_day && peak_seg->x1 <= end_day) {
+			if (peak_seg->x1->x >= start_day && peak_seg->x1->x <= end_day) {
 				peaks_in_day.push_back(peak_seg);
 			}
 			else if (peaks_in_day.size() != 0) {
@@ -246,8 +246,8 @@ vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<s
 	get_segments_info(points_average, pa_x, pa_y, nullptr, true);
 
 	int* result_count_peaks = (int*)malloc(sizeof(int) * count_segments);
-	float* peak_x1 = (float*)malloc(sizeof(float) * count_point_values);
-	float* peak_x2 = (float*)malloc(sizeof(float) * count_point_values);
+	size_t* peak_x1 = (size_t*)malloc(sizeof(size_t) * count_point_values);
+	size_t* peak_x2 = (size_t*)malloc(sizeof(size_t) * count_point_values);
 	float* peak_sum = (float*)malloc(sizeof(float) * count_point_values);
 
 	do_opencl_peaks(count_point_values, count_point_average_values, p_count_segments, segment_positions, p_x, p_y, p_ist, pa_x, pa_y, result_count_peaks, peak_x1, peak_x2, peak_sum);

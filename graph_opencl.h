@@ -7,7 +7,6 @@
 #include <algorithm>
 #include "structs.h"
 #include "graph.h"
-#include "opencl_main.h"
 #include <codeanalysis\warnings.h>
 #pragma warning( push )
 #pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )

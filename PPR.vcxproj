@@ -23,14 +23,12 @@
     <ClCompile Include="graph.cpp" />
     <ClCompile Include="graph_opencl.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="opencl_main.cpp" />
     <ClCompile Include="svg.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="graph_opencl.h" />
-    <ClInclude Include="opencl_main.h" />
     <ClInclude Include="structs.h" />
     <ClInclude Include="database.h" />
     <ClInclude Include="graph.h" />

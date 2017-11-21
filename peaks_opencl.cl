@@ -1,12 +1,12 @@
 __kernel void calculate_peaks(__global const int *count_segments, __global const int* segment_positions,
 	__global const float* p_x, __global const float* p_y, __global const float* p_ist,
 	__global const float* pa_x, __global const float* pa_y,
-	__global int* result_count_peaks, __global float* peak_x1, __global float* peak_x2, __global float* peak_sum) {
+	__global int* result_count_peaks, __global size_t* peak_x1, __global size_t* peak_x2, __global float* peak_sum) {
  
 	const int MOVING_AVERAGE = 21;
 	const int MIN_MINUTE_FOR_ACTION = 30;
 
-	int id, segments, start_position, start_position_average, i, y = 0, count_points_of_segment, count_points_average_of_segment, count_peaks = 0;
+	int id, segments, start_position, start_position_average, i, y = 0, count_points_of_segment, count_points_average_of_segment, count_peaks = 0, temp_peak_x_index = 0;
 	float temp_p_x, temp_p_y, temp_p_ist, temp_pa_x, temp_pa_y, sum = 0, grow = 0, temp_peak_x, temp_peak_ist, temp_sum = 0;
 	bool is_peak = false;
 
@@ -38,6 +38,7 @@ __kernel void calculate_peaks(__global const int *count_segments, __global const
 
 			if (temp_p_y <= temp_pa_y) {
 				if (!is_peak) {
+					temp_peak_x_index = i;
 					temp_peak_x = temp_p_x;
 					temp_peak_ist = temp_p_ist;
 					sum = 0;
@@ -54,8 +55,8 @@ __kernel void calculate_peaks(__global const int *count_segments, __global const
 			else {
 				if (is_peak) {
 					if (temp_p_x - temp_peak_x >= MIN_MINUTE_FOR_ACTION && grow < 3) {
-						peak_x1[start_position + count_peaks] = temp_peak_x;
-						peak_x2[start_position + count_peaks] = temp_p_x;
+						peak_x1[start_position + count_peaks] = temp_peak_x_index;
+						peak_x2[start_position + count_peaks] = i;
 						peak_sum[start_position + count_peaks] = sum;
 						count_peaks++;
 					}

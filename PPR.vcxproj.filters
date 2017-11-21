@@ -33,9 +33,6 @@
     <ClCompile Include="utils.cpp">
       <Filter>Zdrojové soubory</Filter>
     </ClCompile>
-    <ClCompile Include="opencl_main.cpp">
-      <Filter>Zdrojové soubory</Filter>
-    </ClCompile>
     <ClCompile Include="graph_opencl.cpp">
       <Filter>Zdrojové soubory</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
       <Filter>Hlavičkové soubory</Filter>
     </ClInclude>
     <ClInclude Include="utils.h">
-      <Filter>Hlavičkové soubory</Filter>
-    </ClInclude>
-    <ClInclude Include="opencl_main.h">
       <Filter>Hlavičkové soubory</Filter>
     </ClInclude>
     <ClInclude Include="graph_opencl.h">

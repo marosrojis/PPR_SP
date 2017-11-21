@@ -7,7 +7,6 @@
 #include "database.h"
 #include "graph.h"
 #include "svg.h"
-#include "opencl_main.h"
 #include "tinyxml2.h"
 
 #include "graph_opencl.h"
@@ -72,15 +71,17 @@ void printAllSegments(vector<segment_points*> points, vector<segment_points*> po
 	}
 }
 
-void printAllSplitSegments(vector<segment_points*> points, vector<segment_points*> points_by_day, vector<segment_peaks*> peaks) {
-	size_t peak_position = 0, points_position = 0;
+void printAllSplitSegments(vector<segment_points*> points, vector<segment_points*> points_by_day, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+	size_t points_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
-		svg->print_graph_split_segment(points.at(i)->points, points_by_day, &points_position, peaks, &peak_position, points.at(i)->segmentid);
+		size_t peaks_start_index = peak_segment_position[i];
+		size_t peaks_end_index = (i == points.size() - 1) ? peaks.size() : peak_segment_position[i + 1];
+		svg->print_graph_split_segment(points.at(i)->points, points_by_day, &points_position, peaks, peaks_start_index, peaks_end_index, points.at(i)->segmentid);
 	}
 }
 
 void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
-	bool splitSegment = false;
+	bool split_segment = true;
 	
 	map<unsigned int, float> max_values = get_max_values(values);
 	vector<segment_points*> points = get_points_from_values(values, max_values, false);
@@ -90,19 +91,19 @@ void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<u
 	size_t* peak_segment_position = (size_t*)malloc(sizeof(size_t) * points.size());
 
 	//vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
-	vector<segment_peaks*> peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
-	//vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
+	//vector<segment_peaks*> peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
+	vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
 
-	if (splitSegment) {
-		printAllSplitSegments(points, points_by_day, peaks);
+	if (split_segment) {
+		printAllSplitSegments(points, points_by_day, peaks, peak_segment_position);
 	}
 	else {
 		printAllSegments(points, points_average, peaks, peak_segment_position);
 	}
 	
+	freePeaks(peaks);
 	freePoints(points);
 	freePoints(points_average);
-	freePeaks(peaks);
 	freeSegmentPoints(points_by_day);
 	free(peak_segment_position);
 }
@@ -156,11 +157,11 @@ int main()
 {
 	run();
 
-	_CrtDumpMemoryLeaks();
+	//_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
-	cout << "Please press any key to exit the program ..." << endl;
-	cin.get();
+	/*cout << "Please press any key to exit the program ..." << endl;
+	cin.get();*/
 
 	return 0;
 

@@ -30,8 +30,8 @@ typedef struct segment_points
 
 typedef struct peak
 {
-	float x1;
-	float x2;
+	point* x1;
+	point* x2;
 	float sum;
 } PEAKS;
 

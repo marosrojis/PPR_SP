@@ -179,8 +179,10 @@ void get_segments_info(vector<segment_points*> points, float* x_values, float* y
 	}
 }
 
-vector<segment_peaks*> create_peaks(vector<segment_points*> points, int* result_count_peaks, float* peak_x1, float* peak_x2, float* peak_sum, int* segment_positions) {
+vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segment_points*> points_by_day, 
+	int* result_count_peaks, float* peak_x1, float* peak_x2, float* peak_sum, int* segment_positions, size_t** result_segments_position) {
 	vector<segment_peaks*> results;
+	size_t seg_day = 0;
 
 	for (size_t i = 0; i < points.size(); i++) {
 		vector<peak*> peaks;
@@ -192,30 +194,40 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, int* result_
 			peaks.push_back(tmp_peak);
 		}
 		
-		sort(peaks.begin(), peaks.end(), comparatorBySum);
-		size_t peak_size = peaks.size() >= SHOW_PEAKS ? SHOW_PEAKS : peaks.size();
-		vector<peak*> *sort_peaks = new vector<peak*>(peak_size);
-		for (size_t z = 0; z < peaks.size(); z++) {
-			peak* tmp = peaks.at(z);
-			if (z < peak_size) {
-				(*sort_peaks)[z] = tmp;
+		(*result_segments_position)[i] = results.size();
+		while (points.at(i)->segmentid != points_by_day.at(seg_day)->segmentid) {
+			seg_day++;
+		}
+		vector<peak*> peaks_in_day;
+		for (auto &peak_seg : peaks) {
+			float start_day = points_by_day.at(seg_day)->points->at(0)->x;
+			float end_day = points_by_day.at(seg_day)->points->at(points_by_day.at(seg_day)->points->size() - 1)->x;
+			if (peak_seg->x1 >= start_day && peak_seg->x1 <= end_day) {
+				peaks_in_day.push_back(peak_seg);
+			}
+			else if (peaks_in_day.size() != 0) {
+				segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points.at(i)->segmentid);
+				peaks_in_day.clear();
+				peaks_in_day.push_back(peak_seg);
+				results.push_back(seg_peaks);
+				seg_day++;
 			}
 			else {
-				free(tmp);
+				peaks_in_day.push_back(peak_seg);
+				seg_day++;
 			}
 		}
 
-		segment_peaks* seg_peaks = (segment_peaks*)malloc(sizeof(segment_peaks));
-		seg_peaks->peaks = sort_peaks;
-		seg_peaks->segmentid = points.at(i)->segmentid;
-
-		results.push_back(seg_peaks);
+		if (peaks_in_day.size() != 0) {
+			segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points.at(i)->segmentid);
+			results.push_back(seg_peaks);
+		}
 	}
 
 	return results;
 }
 
-vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<segment_points*> points_average) {
+vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position) {
 	int count_segments = points.size();
 	int* segment_positions = get_positions_of_points(points);
 	int count_point_values = segment_positions[count_segments];
@@ -240,7 +252,7 @@ vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<s
 
 	do_opencl_peaks(count_point_values, count_point_average_values, p_count_segments, segment_positions, p_x, p_y, p_ist, pa_x, pa_y, result_count_peaks, peak_x1, peak_x2, peak_sum);
 
-	vector<segment_peaks*> peaks = create_peaks(points, result_count_peaks, peak_x1, peak_x2, peak_sum, segment_positions);
+	vector<segment_peaks*> peaks = create_peaks(points, points_by_day, result_count_peaks, peak_x1, peak_x2, peak_sum, segment_positions, result_segments_position);
 
 	free(segment_positions);
 	free(p_count_segments);

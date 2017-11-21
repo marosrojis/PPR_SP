@@ -90,7 +90,8 @@ void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<u
 	size_t* peak_segment_position = (size_t*)malloc(sizeof(size_t) * points.size());
 
 	//vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
-	vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
+	vector<segment_peaks*> peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
+	//vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
 
 	if (splitSegment) {
 		printAllSplitSegments(points, points_by_day, peaks);

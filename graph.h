@@ -18,6 +18,7 @@
 
 using namespace std;
 
+segment_peaks* create_segment_peaks(vector<peak*> *peaks, size_t segmentid);
 vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position);
 vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position);
 map<unsigned int, float> get_max_values(map<unsigned int, vector<measuredValue*>> values);

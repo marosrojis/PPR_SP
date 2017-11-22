@@ -25,7 +25,7 @@ vector<measuredValue*> Database::get_measured_value() {
 	for (auto &row : results) // access by reference to avoid copying
 	{
 		measuredValue* value = (measuredValue*) malloc(sizeof(measuredValue));
-		if (value == NULL) {
+		if (value == nullptr) {
 			for (size_t i = 0; i < values.size(); i++) {
 				free(values.at(i));
 			}

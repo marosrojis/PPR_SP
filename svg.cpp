@@ -205,7 +205,7 @@ void SVG::print_axis(tinyxml2::XMLPrinter* printer, vector<point*> values, point
 		label_of_axis_full_segment(printer, values, x_max, y_max, y_min);
 	}
 	else {
-		label_of_axis_split_segment(printer, x_max, y_max);
+		label_of_axis_split_segment(printer, x_max, y_max, y_min);
 	}
 }
 
@@ -223,14 +223,23 @@ void SVG::label_of_axis_full_segment(tinyxml2::XMLPrinter* printer, vector<point
 		}
 		i++;
 	}
-	const int COUNT = 8;
 	char number[20];
-	for (i = 1; i <= COUNT; i++) {
-		float value = (y_min->ist - y_max->ist) / COUNT * (COUNT - i + 1);
+	float range = (y_min->ist - y_max->ist) / SVG::COUNT_VALUES_Y_AXIS;
+
+	sprintf(number, "%.2f", y_max->ist);
+	(*printer).OpenElement("text");
+	(*printer).PushAttribute("x", -40);
+	(*printer).PushAttribute("y", y_max->y);
+	(*printer).PushAttribute("fill", "black");
+	(*printer).PushAttribute("font-size", "15");
+	(*printer).PushText(number);
+	(*printer).CloseElement();
+	for (i = 1; i <= SVG::COUNT_VALUES_Y_AXIS; i++) {
+		float value = (range * i) + y_max->ist;
 		sprintf(number, "%.2f", value);
 		(*printer).OpenElement("text");
 		(*printer).PushAttribute("x", -40);
-		(*printer).PushAttribute("y", y_max->y / COUNT * i);
+		(*printer).PushAttribute("y", y_max->y / SVG::COUNT_VALUES_Y_AXIS * (SVG::COUNT_VALUES_Y_AXIS - i));
 		(*printer).PushAttribute("fill", "black");
 		(*printer).PushAttribute("font-size", "15");
 		(*printer).PushText(number);
@@ -238,7 +247,7 @@ void SVG::label_of_axis_full_segment(tinyxml2::XMLPrinter* printer, vector<point
 	}
 }
 
-void SVG::label_of_axis_split_segment(tinyxml2::XMLPrinter* printer, point* x_max, point* y_max) {
+void SVG::label_of_axis_split_segment(tinyxml2::XMLPrinter* printer, point* x_max, point* y_max, point* y_min) {
 	for (int i = 0; i <= 15; i++) {
 		int value = i * 96;
 		(*printer).OpenElement("text");
@@ -247,6 +256,29 @@ void SVG::label_of_axis_split_segment(tinyxml2::XMLPrinter* printer, point* x_ma
 		(*printer).PushAttribute("fill", "black");
 		(*printer).PushAttribute("font-size", "15");
 		(*printer).PushText(get_time(value * 60).c_str());
+		(*printer).CloseElement();
+	}
+
+	char number[20];
+	float range = (y_min->ist - y_max->ist) / SVG::SVG::COUNT_VALUES_Y_AXIS;
+
+	sprintf(number, "%.2f", y_max->ist);
+	(*printer).OpenElement("text");
+	(*printer).PushAttribute("x", -40);
+	(*printer).PushAttribute("y", y_max->y);
+	(*printer).PushAttribute("fill", "black");
+	(*printer).PushAttribute("font-size", "15");
+	(*printer).PushText(number);
+	(*printer).CloseElement();
+	for (size_t i = 1; i <= SVG::COUNT_VALUES_Y_AXIS; i++) {
+		float value = (range * i) + y_max->ist;
+		sprintf(number, "%.2f", value);
+		(*printer).OpenElement("text");
+		(*printer).PushAttribute("x", -40);
+		(*printer).PushAttribute("y", y_max->y / SVG::COUNT_VALUES_Y_AXIS * (SVG::COUNT_VALUES_Y_AXIS - i));
+		(*printer).PushAttribute("fill", "black");
+		(*printer).PushAttribute("font-size", "15");
+		(*printer).PushText(number);
 		(*printer).CloseElement();
 	}
 }

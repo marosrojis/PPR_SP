@@ -81,7 +81,7 @@ void printAllSplitSegments(vector<segment_points*> points, vector<segment_points
 }
 
 void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
-	bool split_segment = true;
+	bool split_segment = false;
 	
 	map<unsigned int, float> max_values = get_max_values(values);
 	vector<segment_points*> points = get_points_from_values(values, max_values, false);
@@ -90,9 +90,9 @@ void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<u
 
 	size_t* peak_segment_position = (size_t*)malloc(sizeof(size_t) * points.size());
 
-	//vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
+	vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
 	//vector<segment_peaks*> peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
-	vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
+	//vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
 
 	if (split_segment) {
 		printAllSplitSegments(points, points_by_day, peaks, peak_segment_position);

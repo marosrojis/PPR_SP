@@ -95,15 +95,11 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 			if (peak_seg->x1->x >= start_day && peak_seg->x1->x <= end_day) {
 				peaks_in_day.push_back(peak_seg);
 			}
-			else if (peaks_in_day.size() != 0) {
+			else {
 				segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points.at(a)->segmentid);
 				peaks_in_day.clear();
 				peaks_in_day.push_back(peak_seg);
 				peaks_in_segment.push_back(seg_peaks);
-				seg_day++;
-			}
-			else {
-				peaks_in_day.push_back(peak_seg);
 				seg_day++;
 			}
 		}
@@ -212,15 +208,11 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 			if (peak_seg->x1->x >= start_day && peak_seg->x1->x <= end_day) {
 				peaks_in_day.push_back(peak_seg);
 			}
-			else if (peaks_in_day.size() != 0) {
+			else {
 				segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points.at(a)->segmentid);
 				peaks_in_day.clear();
 				peaks_in_day.push_back(peak_seg);
 				results.push_back(seg_peaks);
-				seg_day++;
-			}
-			else {
-				peaks_in_day.push_back(peak_seg);
 				seg_day++;
 			}
 		}

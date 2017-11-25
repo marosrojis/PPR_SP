@@ -6,15 +6,16 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <iterator>
 #include "structs.h"
 #include "tbb/parallel_for.h"
 
 
-#define MOVING_AVERAGE 21
-#define Y_SCALE 15
-#define MINUTE 60
-#define MIN_MINUTE_FOR_ACTION 30
-#define SHOW_PEAKS 3
+const int MOVING_AVERAGE = 21;
+const int Y_SCALE = 15;
+const int MINUTE = 60;
+const int MIN_MINUTE_FOR_ACTION = 30;
+const int SHOW_PEAKS = 3;
 
 using namespace std;
 

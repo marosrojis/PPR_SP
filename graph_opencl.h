@@ -7,9 +7,10 @@
 #include <algorithm>
 #include "structs.h"
 #include "graph.h"
-#include <codeanalysis\warnings.h>
+#define CL_USE_DEPRECATED_OPENCL_1_1_APIS
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #pragma warning( push )
-#pragma warning ( disable : ALL_CODE_ANALYSIS_WARNINGS )
+#pragma warning( disable : 4996)
 #include <CL/cl.hpp>
 #pragma warning( pop )
 

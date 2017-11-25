@@ -13,13 +13,39 @@ void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, ve
 	std::stringstream ss;
 
 	point* x_max = (point*)malloc(sizeof(point));
+	if (x_max == nullptr) {
+		printf("Malloc memory error\n");
+		return;
+	}
 	point* y_max = (point*)malloc(sizeof(point));
+	if (y_max == nullptr) {
+		printf("Malloc memory error\n");
+		free(x_max);
+		return;
+	}
 	point* x_min = (point*)malloc(sizeof(point));
+	if (x_min == nullptr) {
+		printf("Malloc memory error\n");
+		free(x_max);
+		free(y_max);
+		return;
+	}
 	point* y_min = (point*)malloc(sizeof(point));
+	if (y_min == nullptr) {
+		printf("Malloc memory error\n");
+		free(x_max);
+		free(y_max);
+		free(y_min);
+		return;
+	}
 	find_max_min_x_y_points(*values, x_max, y_max, x_min, y_min);
 
 	ss << "graph/test" << segmentid << ".svg";
-	errno_t err = fopen_s(&pFile, ss.str().c_str(), "w");
+	errno_t err;
+	if ((err = fopen_s(&pFile, ss.str().c_str(), "w")) != 0) {
+		printf("Cannot write to segment file\n.");
+		return;
+	}
 	tinyxml2::XMLPrinter printer(pFile);
 	printer.PushDeclaration("xml version=\"1.0\" standalone=\"no\"");
 	printer.PushUnknown("DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"");
@@ -53,11 +79,26 @@ void SVG::print_graph_split_segment(vector<point*> *points, vector<segment_point
 	std::stringstream ss;
 
 	point* x_max = (point*)malloc(sizeof(point));
+	if (x_max == nullptr) {
+		printf("Malloc memory error\n");
+		return;
+	}
 	x_max->second = 86400;
 	x_max->x = 1440;
 
 	point* y_max = (point*)malloc(sizeof(point));
+	if (y_max == nullptr) {
+		printf("Malloc memory error\n");
+		free(x_max);
+		return;
+	}
 	point* y_min = (point*)malloc(sizeof(point));
+	if (y_min == nullptr) {
+		printf("Malloc memory error\n");
+		free(x_max);
+		free(y_max);
+		return;
+	}
 	find_max_min_x_y_points(*points, nullptr, y_max, nullptr, y_min);
 
 	size_t days_in_segment = 0, y = 0, temp = *point_position;
@@ -68,7 +109,11 @@ void SVG::print_graph_split_segment(vector<point*> *points, vector<segment_point
 	}
 
 	ss << "graph/test" << segmentid << ".svg";
-	errno_t err = fopen_s(&pFile, ss.str().c_str(), "w");
+	errno_t err;
+	if ((err = fopen_s(&pFile, ss.str().c_str(), "w")) != 0) {
+		printf("Cannot write to segment file\n.");
+		return;
+	}
 	tinyxml2::XMLPrinter printer(pFile);
 	printer.PushDeclaration("xml version=\"1.0\" standalone=\"no\"");
 	printer.PushUnknown("DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"");

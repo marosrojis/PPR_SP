@@ -23,6 +23,11 @@ segment_peaks* create_segment_peaks(vector<peak*> *peaks, size_t segmentid) {
 	}
 
 	segment_peaks* seg_peaks = (segment_peaks*)malloc(sizeof(segment_peaks));
+	if (seg_peaks == nullptr) {
+		delete(sort_peaks);
+		printf("Malloc memory error\n");
+		return nullptr;
+	}
 	seg_peaks->peaks = sort_peaks;
 	seg_peaks->segmentid = segmentid;
 
@@ -31,6 +36,10 @@ segment_peaks* create_segment_peaks(vector<peak*> *peaks, size_t segmentid) {
 
 segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peaks_segment, size_t size) {
 	segment_peaks*** data = (segment_peaks***)malloc(sizeof(segment_peaks**) * size);
+	if (data == nullptr) {
+		printf("Malloc memory error\n");
+		return nullptr;
+	}
 
 	tbb::parallel_for(size_t(0), size, [&](size_t a) {
 		vector<point*> segment = *(points.at(a)->points);
@@ -67,8 +76,9 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 				if (is_peak) {
 					if (point_base_line->x - temp_peak->x >= MIN_MINUTE_FOR_ACTION && grow < 3) {
 						peak* temp = (peak*)malloc(sizeof(peak));
-						if (temp == NULL) {
-							//TODO
+						if (temp == nullptr) {
+							printf("Malloc memory error\n");
+							return data;
 						}
 
 						temp->x1 = temp_peak;
@@ -112,8 +122,12 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 		}
 		
 		segment_peaks** result = (segment_peaks**)malloc(sizeof(segment_peaks*) * peaks_in_segment.size());
+		if (result == nullptr) {
+			printf("Malloc memory error\n");
+			return data;
+		}
 
-		copy(peaks_in_segment.begin(), peaks_in_segment.end(), result);
+		copy(peaks_in_segment.begin(), peaks_in_segment.end(), stdext::checked_array_iterator<segment_peaks**>(result, peaks_in_segment.size()));
 		(*peaks_segment)[a] = peaks_in_segment.size();
 
 		data[a] = result;
@@ -123,9 +137,13 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 }
 
 vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position) {
-	size_t* peaks_segment = (size_t*)malloc(sizeof(size_t) * points.size());
-	segment_peaks*** data = parallel_get_peaks(points, points_average, points_by_day, &peaks_segment, points.size());
 	vector<segment_peaks*> results;
+	size_t* peaks_segment = (size_t*)malloc(sizeof(size_t) * points.size());
+	if (peaks_segment == nullptr) {
+		printf("Malloc memory error\n");
+		return results;
+	}
+	segment_peaks*** data = parallel_get_peaks(points, points_average, points_by_day, &peaks_segment, points.size());
 
 	size_t pos = 0;
 	for (size_t i = 0; i < points.size(); i++) {
@@ -181,8 +199,9 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 				if (is_peak) {
 					if (point_base_line->x - temp_peak->x >= MIN_MINUTE_FOR_ACTION && grow < 3) {
 						peak* temp = (peak*)malloc(sizeof(peak));
-						if (temp == NULL) {
-							//TODO
+						if (temp == nullptr) {
+							printf("Malloc memory error\n");
+							return results;
 						}
 
 						temp->x1 = temp_peak;
@@ -246,23 +265,33 @@ vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) 
 		int64_t lastDay = row->points->at(0)->second;
 		for (size_t y = 0; y < row->points->size(); y++) {
 			point* value = row->points->at(y);		
-
-				if (lastDay > value->second) {
-					points->resize(i);
-					segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
-					seg_points->points = points;
-					seg_points->segmentid = row->segmentid;
-					results.push_back(seg_points);
-
-					vectorSize -= i;
-					points = new vector<point*>(vectorSize);
-					i = 0;
+			if (lastDay > value->second) {
+				points->resize(i);
+				segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
+				if (seg_points == nullptr) {
+					printf("Malloc memory error\n");
+					delete(points);
+					return results;
 				}
-				(*points)[i] = value;
-				i++;
-				lastDay = value->second;
+
+				seg_points->points = points;
+				seg_points->segmentid = row->segmentid;
+				results.push_back(seg_points);
+
+				vectorSize -= i;
+				points = new vector<point*>(vectorSize);
+				i = 0;
+			}
+			(*points)[i] = value;
+			i++;
+			lastDay = value->second;
 		}
 		segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
+		if (seg_points == nullptr) {
+			printf("Malloc memory error\n");
+			delete(points);
+			return results;
+		}
 		seg_points->points = points;
 		seg_points->segmentid = row->segmentid;
 		results.push_back(seg_points);
@@ -284,7 +313,9 @@ vector<segment_points*> get_points_from_values(map<size_t, vector<measuredValue*
 			if (value->ist != NULL) {
 				point* temp = (point *)malloc(sizeof(point));
 				if (temp == nullptr) {
-					//TODO
+					printf("Malloc memory error\n");
+					delete(points);
+					return results;
 				}
 				temp->x = static_cast<float>((value->second - lastSecond) / MINUTE);
 				temp->y = (max_values.find(row.first)->second - value->ist) * Y_SCALE;
@@ -296,6 +327,11 @@ vector<segment_points*> get_points_from_values(map<size_t, vector<measuredValue*
 			}
 		}
 		segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
+		if (seg_points == nullptr) {
+			printf("Malloc memory error\n");
+			delete(points);
+			return results;
+		}
 		seg_points->points = points;
 		seg_points->segmentid = row.first;
 		results.push_back(seg_points);
@@ -307,12 +343,17 @@ vector<segment_points*> get_points_from_values(map<size_t, vector<measuredValue*
 measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values, int moving_average_size, size_t size)
 {
 	measuredValue** data = (measuredValue**)malloc(sizeof(measuredValue*) * size);
+	if (data == nullptr) {
+		printf("Malloc memory error\n");
+		return nullptr;
+	}
 
 	tbb::parallel_for(size_t(0), size, [&](size_t i)
 	{
 		float sum = 0;
 		measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
-		if (value == NULL) {
+		if (value == nullptr) {
+			printf("Malloc memory error\n");
 			return;
 		}
 		if (i < moving_average_size || i + moving_average_size >= size) {
@@ -364,9 +405,9 @@ map<size_t, vector<measuredValue*>> calculate_moving_average(map<size_t, vector<
 
 		for (size_t i = 0; i < row.second.size(); i++) {
 			measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
-			if (value == NULL) {
-				map<size_t, vector<measuredValue*>> free_results;
-				return free_results;
+			if (value == nullptr) {
+				printf("Malloc memory error\n");
+				return results;
 			}
 			if (i < size || i + size >= row.second.size()) {
 				value->ist = NULL;

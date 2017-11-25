@@ -6,7 +6,7 @@
 #include <sstream>
 #include "structs.h"
 
-#define SECOND_TO_MINUTE 60
+const int SECOND_TO_MINUTE = 60;
 
 point* get_max_x_point(std::vector<point*> values);
 point* get_max_y_point(std::vector<point*> values);

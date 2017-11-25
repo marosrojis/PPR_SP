@@ -90,6 +90,10 @@ void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<stri
 	vector<segment_points*> points_by_day = split_segments_by_day(points);
 
 	size_t* peak_segment_position = (size_t*)malloc(sizeof(size_t) * points.size());
+	if (peak_segment_position == nullptr) {
+		printf("Malloc memory error\n");
+		return;
+	}
 
 	
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

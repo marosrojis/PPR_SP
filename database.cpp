@@ -29,7 +29,7 @@ vector<measuredValue*> Database::get_measured_value() {
 			for (size_t i = 0; i < values.size(); i++) {
 				free(values.at(i));
 			}
-			cout << "Malloc memory error";
+			cout << "Malloc memory error" << endl;
 			vector<measuredValue*> free_result;
 			return free_result;
 		}

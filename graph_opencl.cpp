@@ -2,6 +2,10 @@
 
 using namespace std;
 
+bool comparatorBySum(const peak* a, const peak* b) {
+	return a->sum > b->sum;
+}
+
 size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_values, size_t *count_segments, size_t* segment_positions,
 	float* p_x, float* p_y, float* p_ist, float* pa_x, float* pa_y,
 	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum) {
@@ -16,7 +20,15 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 		fprintf(stderr, "Failed to load kernel.\n");
 		exit(1);
 	}
+	if (!fp) {
+		fprintf(stderr, "Failed to load kernel.\n");
+		exit(1);
+	}
 	source_str = (char*)malloc(MAX_SOURCE_SIZE);
+	if (source_str == nullptr) {
+		printf("Malloc memory error\n");
+		return 1;
+	}
 	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	fclose(fp);
 
@@ -144,19 +156,24 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	return 0;
 }
 
-bool comparatorBySum(const peak* a, const peak* b) {
-	return a->sum > b->sum;
-}
-
 size_t* get_positions_of_points(vector<segment_points*> points) {
-	size_t* segment_positions = (size_t*)malloc(sizeof(size_t) * (points.size() + 1));
+	size_t malloc_size = points.size() + 1;
+	size_t* segment_positions = (size_t*)malloc(sizeof(size_t) * malloc_size);
+	if (segment_positions == nullptr) {
+		printf("Malloc memory error\n");
+		return nullptr;
+	}
 	
 	size_t position = 0;
-	segment_positions[0] = 0;
-	for (size_t i = 0; i < points.size(); i++) {
-		segment_points* segment = points.at(i);
-		position += segment->points->size();
-		segment_positions[i + 1] = position;
+	for (size_t i = 0; i < malloc_size; i++) {
+		if (i == 0) {
+			segment_positions[i] = 0;
+		}
+		else {
+			segment_points* segment = points.at(i - 1);
+			position += segment->points->size();
+			segment_positions[i] = position;
+		}
 	}
 
 	return segment_positions;
@@ -188,6 +205,11 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 		vector<peak*> peaks;
 		for (size_t y = 0; y < result_count_peaks[i]; y++) {
 			peak* tmp_peak = (peak*)malloc(sizeof(peak));
+			if (tmp_peak == nullptr) {
+				printf("Malloc memory error\n");
+				return results;
+			}
+
 			tmp_peak->x1 = points.at(i)->points->at(peak_x1[segment_positions[i] + y]);
 			tmp_peak->x2 = points.at(i)->points->at(peak_x2[segment_positions[i] + y]);
 			tmp_peak->sum = peak_sum[segment_positions[i] + y];
@@ -228,31 +250,118 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 }
 
 vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position) {
+	vector<segment_peaks*> peaks;
 	size_t count_segments = points.size();
 	size_t* segment_positions = get_positions_of_points(points);
 	size_t count_point_values = segment_positions[count_segments];
 	size_t count_point_average_values = count_point_values - MOVING_AVERAGE + 1;
 
 	size_t* p_count_segments = (size_t*)malloc(sizeof(size_t));
+	if (p_count_segments == nullptr) {
+		printf("Malloc memory error\n");
+		return peaks;
+	}
+
 	*p_count_segments = count_segments;
 	float* p_x = (float*)malloc(sizeof(float) * count_point_values);
+	if (p_x == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		return peaks;
+	}
 	float* p_y = (float*)malloc(sizeof(float) * count_point_values);
+	if (p_y == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		return peaks;
+	}
 	float* p_ist = (float*)malloc(sizeof(float) * count_point_values);
+	if (p_ist == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		free(p_y);
+		return peaks;
+	}
 
 	float* pa_x = (float*)malloc(sizeof(float) * count_point_average_values);
+	if (pa_x == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		free(p_y);
+		free(p_ist);
+		return peaks;
+	}
 	float* pa_y = (float*)malloc(sizeof(float) * count_point_average_values);
+	if (pa_y == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		free(p_y);
+		free(p_ist);
+		free(pa_x);
+		return peaks;
+	}
 
 	get_segments_info(points, p_x, p_y, p_ist, false);
 	get_segments_info(points_average, pa_x, pa_y, nullptr, true);
 
 	size_t* result_count_peaks = (size_t*)malloc(sizeof(size_t) * count_segments);
+	if (result_count_peaks == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		free(p_y);
+		free(p_ist);
+		free(pa_x);
+		free(pa_y);
+		return peaks;
+	}
 	size_t* peak_x1 = (size_t*)malloc(sizeof(size_t) * count_point_values);
+	if (peak_x1 == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		free(p_y);
+		free(p_ist);
+		free(pa_x);
+		free(pa_y);
+		free(result_count_peaks);
+		return peaks;
+	}
 	size_t* peak_x2 = (size_t*)malloc(sizeof(size_t) * count_point_values);
+	if (peak_x2 == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		free(p_y);
+		free(p_ist);
+		free(pa_x);
+		free(pa_y);
+		free(result_count_peaks);
+		free(peak_x1);
+		return peaks;
+	}
 	float* peak_sum = (float*)malloc(sizeof(float) * count_point_values);
+	if (peak_sum == nullptr) {
+		printf("Malloc memory error\n");
+		free(p_count_segments);
+		free(p_x);
+		free(p_y);
+		free(p_ist);
+		free(pa_x);
+		free(pa_y);
+		free(result_count_peaks);
+		free(peak_x1);
+		free(peak_x2);
+		return peaks;
+	}
 
 	do_opencl_peaks(count_point_values, count_point_average_values, p_count_segments, segment_positions, p_x, p_y, p_ist, pa_x, pa_y, result_count_peaks, peak_x1, peak_x2, peak_sum);
 
-	vector<segment_peaks*> peaks = create_peaks(points, points_by_day, result_count_peaks, peak_x1, peak_x2, peak_sum, segment_positions, result_segments_position);
+	peaks = create_peaks(points, points_by_day, result_count_peaks, peak_x1, peak_x2, peak_sum, segment_positions, result_segments_position);
 
 	free(segment_positions);
 	free(p_count_segments);

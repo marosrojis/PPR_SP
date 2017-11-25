@@ -10,9 +10,9 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	FILE *fp;
 	char *source_str;
 	size_t source_size;
+	errno_t err;
 
-	fp = fopen("peaks_opencl.cl", "r");
-	if (!fp) {
+	if ((err = fopen_s(&fp, "peaks_opencl.cl", "r")) != 0) {
 		fprintf(stderr, "Failed to load kernel.\n");
 		exit(1);
 	}

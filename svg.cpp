@@ -244,7 +244,7 @@ void SVG::label_of_axis_full_segment(tinyxml2::XMLPrinter* printer, vector<point
 	char number[20];
 	float range = (y_min->ist - y_max->ist) / SVG::COUNT_VALUES_Y_AXIS;
 
-	sprintf(number, "%.2f", y_max->ist);
+	sprintf_s(number, sizeof(number), "%.2f", y_max->ist);
 	(*printer).OpenElement("text");
 	(*printer).PushAttribute("x", -40);
 	(*printer).PushAttribute("y", y_max->y);
@@ -255,7 +255,7 @@ void SVG::label_of_axis_full_segment(tinyxml2::XMLPrinter* printer, vector<point
 	for (i = 1; i <= SVG::COUNT_VALUES_Y_AXIS; i++) {
 		float value = (range * i) + y_max->ist;
 		float y = y_max->y / SVG::COUNT_VALUES_Y_AXIS * (SVG::COUNT_VALUES_Y_AXIS - i);
-		sprintf(number, "%.2f", value);
+		sprintf_s(number, sizeof(number), "%.2f", value);
 		(*printer).OpenElement("text");
 		(*printer).PushAttribute("x", -40);
 		(*printer).PushAttribute("y", y);
@@ -297,7 +297,7 @@ void SVG::label_of_axis_split_segment(tinyxml2::XMLPrinter* printer, point* x_ma
 	char number[20];
 	float range = (y_min->ist - y_max->ist) / SVG::SVG::COUNT_VALUES_Y_AXIS;
 
-	sprintf(number, "%.2f", y_max->ist);
+	sprintf_s(number, sizeof(number), "%.2f", y_max->ist);
 	(*printer).OpenElement("text");
 	(*printer).PushAttribute("x", -40);
 	(*printer).PushAttribute("y", y_max->y);
@@ -308,7 +308,7 @@ void SVG::label_of_axis_split_segment(tinyxml2::XMLPrinter* printer, point* x_ma
 	for (size_t i = 1; i <= SVG::COUNT_VALUES_Y_AXIS; i++) {
 		float value = (range * i) + y_max->ist;
 		float y = y_max->y / SVG::COUNT_VALUES_Y_AXIS * (SVG::COUNT_VALUES_Y_AXIS - i);
-		sprintf(number, "%.2f", value);
+		sprintf_s(number, sizeof(number), "%.2f", value);
 		(*printer).OpenElement("text");
 		(*printer).PushAttribute("x", -40);
 		(*printer).PushAttribute("y", y);

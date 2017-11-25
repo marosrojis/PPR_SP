@@ -27,7 +27,7 @@ void freeMeasuredValues(vector<measuredValue*> values) {
 	}
 }
 
-void freeMapMeasuredValues(map<unsigned int, vector<measuredValue*>> values) {
+void freeMapMeasuredValues(map<size_t, vector<measuredValue*>> values) {
 	for (auto &segment : values) {
 		for (auto &value : segment.second) {
 			free(value);
@@ -80,21 +80,48 @@ void printAllSplitSegments(vector<segment_points*> points, vector<segment_points
 	}
 }
 
-void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, vector<measuredValue*>> values_average) {
-	bool split_segment = false;
+void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<string> args) {
+	vector<segment_points*> points_average;
+	vector<segment_peaks*> peaks;
+	map<size_t, vector<measuredValue*>> values_average;
 	
-	map<unsigned int, float> max_values = get_max_values(values);
+	map<size_t, float> max_values = get_max_values(values);
 	vector<segment_points*> points = get_points_from_values(values, max_values, false);
-	vector<segment_points*> points_average = get_points_from_values(values_average, max_values, true);
 	vector<segment_points*> points_by_day = split_segments_by_day(points);
 
 	size_t* peak_segment_position = (size_t*)malloc(sizeof(size_t) * points.size());
 
-	vector<segment_peaks*> peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
-	//vector<segment_peaks*> peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
-	//vector<segment_peaks*> peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
+	
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	if (split_segment) {
+	if (find(args.begin(), args.end(), "-serial") != args.end()) {
+		values_average = calculate_moving_average(values);
+		if (values_average.size() == 0) {
+			return;
+		}
+		points_average = get_points_from_values(values_average, max_values, true);
+		peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
+	}
+	else if (find(args.begin(), args.end(), "-tbb") != args.end()) {
+		values_average = calculate_moving_average_tbb(values);
+		if (values_average.size() == 0) {
+			return;
+		}
+		points_average = get_points_from_values(values_average, max_values, true);
+		peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
+	}
+	else if (find(args.begin(), args.end(), "-gpu") != args.end()) {
+		values_average = calculate_moving_average(values);
+		if (values_average.size() == 0) {
+			return;
+		}
+		points_average = get_points_from_values(values_average, max_values, true);
+		peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
+	}
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
+
+	if (find(args.begin(), args.end(), "-d") != args.end()) {
 		printAllSplitSegments(points, points_by_day, peaks, peak_segment_position);
 	}
 	else {
@@ -104,14 +131,15 @@ void get_calculate_point(map<unsigned int, vector<measuredValue*>> values, map<u
 	freePeaks(peaks);
 	freePoints(points);
 	freePoints(points_average);
+	freeMapMeasuredValues(values_average);
 	freeSegmentPoints(points_by_day);
 	free(peak_segment_position);
 }
 
-map<unsigned int, vector<measuredValue*>> transform_measured_value(vector<measuredValue*> values) {
-	map<unsigned int, vector<measuredValue*>> values_map;
+map<size_t, vector<measuredValue*>> transform_measured_value(vector<measuredValue*> values) {
+	map<size_t, vector<measuredValue*>> values_map;
 	for (auto &row : values) {
-		map<unsigned int, vector<measuredValue*>>::iterator p = values_map.find(row->segmentid);
+		map<size_t, vector<measuredValue*>>::iterator p = values_map.find(row->segmentid);
 		if (p != values_map.end()) {
 			p->second.push_back(row);
 		}
@@ -124,40 +152,82 @@ map<unsigned int, vector<measuredValue*>> transform_measured_value(vector<measur
 	return values_map;
 }
 
-void run() {
+void startProgram(vector<string> args) {
 	db = new Database();
 	svg = new SVG();
 
 	vector<measuredValue*> values = db->get_measured_value();
 
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-	map<unsigned int, vector<measuredValue*>> values_map = transform_measured_value(values);
+	map<size_t, vector<measuredValue*>> values_map = transform_measured_value(values);
 	if (values_map.size() == 0) {
 		return;
 	}
-
-	map<unsigned int, vector<measuredValue*>> values_average = calculate_moving_average_tbb(values_map);
-	if (values_average.size() == 0) {
-		return;
-	}
 	
-	get_calculate_point(values_map, values_average);
-
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
+	get_calculate_point(values_map, args);
 
 	freeMeasuredValues(values);
-	freeMapMeasuredValues(values_average);
 	delete(svg);
 	delete(db);
 }
 
-int main()
-{
-	run();
+void printHelp() {
+	ostringstream retStream;
 
-	//_CrtDumpMemoryLeaks();
+	retStream << "Usage: PPR.exe [-h] [-serial | -tbb | -gpu] [-stats] [-d]\n\n";
+	retStream << "Options:\n";
+	retStream << "\t-d\t\t Split segment on days in graph.\n";
+	retStream << "\t-h\t\t Show help.\n";
+	retStream << "\t-gpu\t\t Start parallel version using GPU.\n";
+	retStream << "\t-serial\t\t Start serial version.\n";
+	retStream << "\t-tbb\t\t Start parallel version using Threading Building Blocks.\n\n";
+
+	cout << retStream.str();
+}
+
+bool validateInput(vector<string> args) {
+	for (auto &input : args) {
+		if (!(input == "-h" || input == "-serial" || input == "-tbb" || input == "-gpu" || input == "-stats" || input == "-d")) {
+			cout << "Invalid argument \""<< input << ".\"\n" << endl;
+			printHelp();
+			return false;
+		}
+	}
+
+	if (args.size() == 0 || find(args.begin(), args.end(), "-h") != args.end()) {
+		printHelp();
+		return false;
+	}
+
+	if (!(find(args.begin(), args.end(), "-serial") != args.end() || find(args.begin(), args.end(), "-tbb") != args.end() ||
+		find(args.begin(), args.end(), "-gpu") != args.end())) {
+		cout << "Select version of program (serial, tbb or gpu).\n\n" << endl;
+		printHelp();
+		return false;
+	}
+
+	if ((find(args.begin(), args.end(), "-serial") != args.end() && find(args.begin(), args.end(), "-tbb") != args.end()) || 
+		(find(args.begin(), args.end(), "-serial") != args.end() && find(args.begin(), args.end(), "-gpu") != args.end()) ||
+		find(args.begin(), args.end(), "-gpu") != args.end() && find(args.begin(), args.end(), "-tbb") != args.end()) {
+		cout << "Use only one version of program!\n\n" << endl;
+		printHelp();
+		return false;
+	}
+
+	return true;
+}
+
+void run(int argc, char *argv[]) {
+	vector<string> args(argv + 1, argv + argc + !argc);
+	if (validateInput(args)) {
+		startProgram(args);
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	run(argc, argv);
+
+	_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
 	/*cout << "Please press any key to exit the program ..." << endl;

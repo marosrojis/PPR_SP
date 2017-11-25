@@ -20,7 +20,7 @@ bool Database::open(char* filename)
 }
 
 vector<measuredValue*> Database::get_measured_value() {
-	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat), julianday(measuredat) FROM measuredvalue WHERE ist IS NOT NULL;");
+	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat) FROM measuredvalue WHERE ist IS NOT NULL;");
 	vector<measuredValue*> values;
 	for (auto &row : results) // access by reference to avoid copying
 	{
@@ -38,7 +38,6 @@ vector<measuredValue*> Database::get_measured_value() {
 		value->segmentid = stoi(row.at(2));
 		value->second = stoi(row.at(3));
 		value->second_of_day = get_seconds_of_day(value->second);
-		value->day = (int64_t) stof(row.at(4));
 		
 		values.push_back(value);
 	}

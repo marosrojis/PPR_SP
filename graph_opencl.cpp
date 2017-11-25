@@ -2,9 +2,9 @@
 
 using namespace std;
 
-size_t do_opencl_peaks(int count_point_values, int count_point_average_values, int *count_segments, int* segment_positions,
+size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_values, size_t *count_segments, size_t* segment_positions,
 	float* p_x, float* p_y, float* p_ist, float* pa_x, float* pa_y,
-	int* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum) {
+	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum) {
 
 	// Load the kernel source code into the array source_str
 	FILE *fp;
@@ -36,22 +36,22 @@ size_t do_opencl_peaks(int count_point_values, int count_point_average_values, i
 	cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 
 	// Create memory buffers on the device for each vector 
-	cl_mem count_segments_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int), NULL, &ret);
-	cl_mem segment_positions_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, (*count_segments + 1) * sizeof(int), NULL, &ret);
+	cl_mem count_segments_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(size_t), NULL, &ret);
+	cl_mem segment_positions_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, (*count_segments + 1) * sizeof(size_t), NULL, &ret);
 	cl_mem p_x_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
 	cl_mem p_y_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
 	cl_mem p_ist_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
 	cl_mem pa_x_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_average_values * sizeof(float), NULL, &ret);
 	cl_mem pa_y_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_average_values * sizeof(float), NULL, &ret);
 
-	cl_mem result_count_peaks_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, *count_segments * sizeof(int), NULL, &ret);
+	cl_mem result_count_peaks_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, *count_segments * sizeof(size_t), NULL, &ret);
 	cl_mem peak_x1_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
 	cl_mem peak_x2_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
 	cl_mem peak_sum_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(float), NULL, &ret);
 
 	// Copy the lists A and B to their respective memory buffers
-	ret = clEnqueueWriteBuffer(command_queue, count_segments_mem_obj, CL_TRUE, 0, sizeof(int), count_segments, 0, NULL, NULL);
-	ret = clEnqueueWriteBuffer(command_queue, segment_positions_mem_obj, CL_TRUE, 0, (*count_segments + 1) * sizeof(int), segment_positions, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(command_queue, count_segments_mem_obj, CL_TRUE, 0, sizeof(size_t), count_segments, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(command_queue, segment_positions_mem_obj, CL_TRUE, 0, (*count_segments + 1) * sizeof(size_t), segment_positions, 0, NULL, NULL);
 	ret = clEnqueueWriteBuffer(command_queue, p_x_mem_obj, CL_TRUE, 0, count_point_values * sizeof(float), p_x, 0, NULL, NULL);
 	ret = clEnqueueWriteBuffer(command_queue, p_y_mem_obj, CL_TRUE, 0, count_point_values * sizeof(float), p_y, 0, NULL, NULL);
 	ret = clEnqueueWriteBuffer(command_queue, p_ist_mem_obj, CL_TRUE, 0, count_point_values * sizeof(float), p_ist, 0, NULL, NULL);
@@ -66,32 +66,32 @@ size_t do_opencl_peaks(int count_point_values, int count_point_average_values, i
 	// Build the program
 	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
 
-	//if (ret != CL_SUCCESS) { // odkomentuj a mas vypis jen kdyz to tam vyfailuje, jinak to vypisuje vse
-	char *buff_erro;
-	cl_int errcode;
-	size_t build_log_len;
-	errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &build_log_len);
-	if (errcode) {
-		printf("clGetProgramBuildInfo failed at line %d\n", __LINE__);
-		exit(-1);
-	}
+	if (ret != CL_SUCCESS) { // odkomentuj a mas vypis jen kdyz to tam vyfailuje, jinak to vypisuje vse
+		char *buff_erro;
+		cl_int errcode;
+		size_t build_log_len;
+		errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &build_log_len);
+		if (errcode) {
+			printf("clGetProgramBuildInfo failed at line %d\n", __LINE__);
+			exit(-1);
+		}
 
-	buff_erro = (char*)malloc(build_log_len);
-	if (!buff_erro) {
-		printf("malloc failed at line %d\n", __LINE__);
-		exit(-2);
-	}
+		buff_erro = (char*)malloc(build_log_len);
+		if (!buff_erro) {
+			printf("malloc failed at line %d\n", __LINE__);
+			exit(-2);
+		}
 
-	errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, build_log_len, buff_erro, NULL);
-	if (errcode) {
-		printf("clGetProgramBuildInfo failed at line %d\n", __LINE__);
-		exit(-3);
-	}
+		errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, build_log_len, buff_erro, NULL);
+		if (errcode) {
+			printf("clGetProgramBuildInfo failed at line %d\n", __LINE__);
+			exit(-3);
+		}
 
-	fprintf(stderr, "Build log: \n%s\n", buff_erro); //Be careful with  the fprint
-	free(buff_erro);
-	fprintf(stderr, "clBuildProgram failed\n");
-	//}
+		fprintf(stderr, "Build log: \n%s\n", buff_erro); //Be careful with  the fprint
+		free(buff_erro);
+		fprintf(stderr, "clBuildProgram failed\n");
+	}
 
 	// Create the OpenCL kernel
 	cl_kernel kernel = clCreateKernel(program, "calculate_peaks", &ret);
@@ -116,7 +116,7 @@ size_t do_opencl_peaks(int count_point_values, int count_point_average_values, i
 		&global_item_size, &local_item_size, 0, NULL, NULL);
 
 	// Read the memory buffer C on the device to the local variable C
-	ret = clEnqueueReadBuffer(command_queue, result_count_peaks_mem_obj, CL_TRUE, 0, *count_segments * sizeof(int), result_count_peaks, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(command_queue, result_count_peaks_mem_obj, CL_TRUE, 0, *count_segments * sizeof(size_t), result_count_peaks, 0, NULL, NULL);
 	ret = clEnqueueReadBuffer(command_queue, peak_x1_mem_obj, CL_TRUE, 0, count_point_values * sizeof(size_t), peak_x1, 0, NULL, NULL);
 	ret = clEnqueueReadBuffer(command_queue, peak_x2_mem_obj, CL_TRUE, 0, count_point_values * sizeof(size_t), peak_x2, 0, NULL, NULL);
 	ret = clEnqueueReadBuffer(command_queue, peak_sum_mem_obj, CL_TRUE, 0, count_point_values * sizeof(float), peak_sum, 0, NULL, NULL);
@@ -148,10 +148,10 @@ bool comparatorBySum(const peak* a, const peak* b) {
 	return a->sum > b->sum;
 }
 
-int* get_positions_of_points(vector<segment_points*> points) {
-	int* segment_positions = (int*)malloc(sizeof(int) * (points.size() + 1));
+size_t* get_positions_of_points(vector<segment_points*> points) {
+	size_t* segment_positions = (size_t*)malloc(sizeof(size_t) * (points.size() + 1));
 	
-	int position = 0;
+	size_t position = 0;
 	segment_positions[0] = 0;
 	for (size_t i = 0; i < points.size(); i++) {
 		segment_points* segment = points.at(i);
@@ -180,7 +180,7 @@ void get_segments_info(vector<segment_points*> points, float* x_values, float* y
 }
 
 vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segment_points*> points_by_day, 
-	int* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum, int* segment_positions, size_t** result_segments_position) {
+	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum, size_t* segment_positions, size_t** result_segments_position) {
 	vector<segment_peaks*> results;
 	size_t seg_day = 0;
 
@@ -228,12 +228,12 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 }
 
 vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position) {
-	int count_segments = points.size();
-	int* segment_positions = get_positions_of_points(points);
-	int count_point_values = segment_positions[count_segments];
-	int count_point_average_values = count_point_values - MOVING_AVERAGE + 1;
+	size_t count_segments = points.size();
+	size_t* segment_positions = get_positions_of_points(points);
+	size_t count_point_values = segment_positions[count_segments];
+	size_t count_point_average_values = count_point_values - MOVING_AVERAGE + 1;
 
-	int* p_count_segments = (int*)malloc(sizeof(int));
+	size_t* p_count_segments = (size_t*)malloc(sizeof(size_t));
 	*p_count_segments = count_segments;
 	float* p_x = (float*)malloc(sizeof(float) * count_point_values);
 	float* p_y = (float*)malloc(sizeof(float) * count_point_values);
@@ -245,7 +245,7 @@ vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<s
 	get_segments_info(points, p_x, p_y, p_ist, false);
 	get_segments_info(points_average, pa_x, pa_y, nullptr, true);
 
-	int* result_count_peaks = (int*)malloc(sizeof(int) * count_segments);
+	size_t* result_count_peaks = (size_t*)malloc(sizeof(size_t) * count_segments);
 	size_t* peak_x1 = (size_t*)malloc(sizeof(size_t) * count_point_values);
 	size_t* peak_x2 = (size_t*)malloc(sizeof(size_t) * count_point_values);
 	float* peak_sum = (float*)malloc(sizeof(float) * count_point_values);

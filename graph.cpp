@@ -225,8 +225,8 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 	return results;
 }
 
-map<unsigned int, float> get_max_values(map<unsigned int, vector<measuredValue*>> values) {
-	map<unsigned int, float> results;
+map<size_t, float> get_max_values(map<size_t, vector<measuredValue*>> values) {
+	map<size_t, float> results;
 	for (auto &value : values) {
 		float max_value = get_max_value_ist(value.second);
 		results[value.first] = max_value;
@@ -271,7 +271,7 @@ vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) 
 	return results;
 }
 
-vector<segment_points*> get_points_from_values(map<unsigned int, vector<measuredValue*>> values, map<unsigned int, float> max_values, bool isAverage) {
+vector<segment_points*> get_points_from_values(map<size_t, vector<measuredValue*>> values, map<size_t, float> max_values, bool isAverage) {
 	vector<segment_points*> results;
 	for (auto &row : values) {
 		size_t i = 0;
@@ -283,7 +283,7 @@ vector<segment_points*> get_points_from_values(map<unsigned int, vector<measured
 		for (auto &value : row.second) {
 			if (value->ist != NULL) {
 				point* temp = (point *)malloc(sizeof(point));
-				if (temp == NULL) {
+				if (temp == nullptr) {
 					//TODO
 				}
 				temp->x = static_cast<float>((value->second - lastSecond) / MINUTE);
@@ -326,7 +326,6 @@ measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values,
 		}
 
 		measuredValue* segment_value = values.at(i);
-		value->day = segment_value->day;
 		value->second = segment_value->second;
 		value->segmentid = segment_value->segmentid;
 		sum = 0;
@@ -336,8 +335,8 @@ measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values,
 	return data;
 }
 
-map<unsigned int, vector<measuredValue*>> calculate_moving_average_tbb(map<unsigned int, vector<measuredValue*>> values_map) {
-	map<unsigned int, vector<measuredValue*>> results;
+map<size_t, vector<measuredValue*>> calculate_moving_average_tbb(map<size_t, vector<measuredValue*>> values_map) {
+	map<size_t, vector<measuredValue*>> results;
 	float sum = 0;
 
 	int size = (int)MOVING_AVERAGE / 2;
@@ -352,8 +351,8 @@ map<unsigned int, vector<measuredValue*>> calculate_moving_average_tbb(map<unsig
 	return results;
 }
 
-map<unsigned int, vector<measuredValue*>> calculate_moving_average(map<unsigned int, vector<measuredValue*>> values_map) {
-	map<unsigned int, vector<measuredValue*>> results;
+map<size_t, vector<measuredValue*>> calculate_moving_average(map<size_t, vector<measuredValue*>> values_map) {
+	map<size_t, vector<measuredValue*>> results;
 	float sum = 0;
 
 	int size = (int)MOVING_AVERAGE / 2;
@@ -366,7 +365,7 @@ map<unsigned int, vector<measuredValue*>> calculate_moving_average(map<unsigned 
 		for (size_t i = 0; i < row.second.size(); i++) {
 			measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
 			if (value == NULL) {
-				map<unsigned int, vector<measuredValue*>> free_results;
+				map<size_t, vector<measuredValue*>> free_results;
 				return free_results;
 			}
 			if (i < size || i + size >= row.second.size()) {
@@ -380,7 +379,6 @@ map<unsigned int, vector<measuredValue*>> calculate_moving_average(map<unsigned 
 			}
 
 			measuredValue* segment_value = row.second.at(i);
-			value->day = segment_value->day;
 			value->second = segment_value->second;
 			value->segmentid = segment_value->segmentid;
 			results.find(row.first)->second.push_back(value);

@@ -7,11 +7,10 @@
 typedef struct measuredValue
 {
 	unsigned int id;
-	int64_t day;
 	unsigned int second;
 	unsigned int second_of_day;
 	float ist;
-	int segmentid;
+	size_t segmentid;
 } MEASUREDVALUE;
 
 typedef struct point
@@ -25,7 +24,7 @@ typedef struct point
 typedef struct segment_points
 {
 	std::vector<point*> *points;
-	int segmentid;
+	size_t segmentid;
 } SEGMENT_POINTS;
 
 typedef struct peak
@@ -38,7 +37,7 @@ typedef struct peak
 typedef struct segment_peaks
 {
 	std::vector<peak*> *peaks;
-	int segmentid;
+	size_t segmentid;
 } SEGMENT_PEAKS;
 
 #endif

@@ -26,7 +26,7 @@ void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, ve
 	printer.OpenElement("svg");
 	printer.PushAttribute("xmlns", "http://www.w3.org/2000/svg");
 	printer.PushAttribute("version", "1.1");
-	printer.PushAttribute("style", "padding: 25px 25px 15px 50px");
+	printer.PushAttribute("style", "padding: 40px 25px 15px 50px");
 	printer.PushAttribute("width", x_max->x);
 	printer.PushAttribute("height", y_max->y + 25);
 
@@ -77,12 +77,14 @@ void SVG::print_graph_split_segment(vector<point*> *points, vector<segment_point
 	printer.PushAttribute("version", "1.1");
 	printer.PushAttribute("style", "padding: 25px 25px 15px 50px");
 	printer.PushAttribute("width", x_max->x);
-	printer.PushAttribute("height", (y_max->y + 55) * days_in_segment);
+	printer.PushAttribute("height", (y_max->y + 75) * days_in_segment);
 
 
 	for (size_t i = 0; i < days_in_segment; i++) {
-		create_g_transform(&printer, i * (y_max->y + 65));
-		print_title(&printer, segmentid, x_max);
+		create_g_transform(&printer, i * (y_max->y + 65) + 25);
+		if (i == 0) {
+			print_title(&printer, segmentid, x_max);
+		}
 		print_axis(&printer, *points, x_max, y_max, y_min, false);
 		print_polynate_split_segment(&printer, *(points_by_day.at(*point_position + i)->points), "rgb(0,0,0)");
 		
@@ -142,8 +144,8 @@ void SVG::print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, point*
 			x2 = value->x2->x;
 		}
 		else {
-			x1 = value->x1->second / SVG::SECOND_IN_MINUTE;
-			x2 = value->x2->second / SVG::SECOND_IN_MINUTE;
+			x1 = value->x1->second / (float)SVG::SECOND_IN_MINUTE;
+			x2 = value->x2->second / (float)SVG::SECOND_IN_MINUTE;
 		}
 
 
@@ -338,7 +340,7 @@ void SVG::print_title(tinyxml2::XMLPrinter* printer, size_t segmentid, point* x_
 
 	(*printer).OpenElement("text");
 	(*printer).PushAttribute("x", (x_max->x / 2) - 50);
-	(*printer).PushAttribute("y", -5);
+	(*printer).PushAttribute("y", -15);
 	(*printer).PushAttribute("fill", "black");
 	(*printer).PushAttribute("font-size", "25");
 	(*printer).PushText(retStream.str().c_str());

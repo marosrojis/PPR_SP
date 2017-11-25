@@ -80,6 +80,41 @@ void printAllSplitSegments(vector<segment_points*> points, vector<segment_points
 	}
 }
 
+void printStats(vector<segment_points*> points, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+	ostringstream retStream;
+	retStream << "ID segment;Minimum ist value;Maximum ist value;Average ist value;Found peaks\n";
+
+	for (size_t i = 0; i < points.size(); i++) {
+		segment_points* segment = points.at(i);
+
+		float average = 0, min_ist = segment->points->at(0)->ist, max_ist = 0;
+		for (size_t y = 0; y < segment->points->size(); y++) {
+			point* temp = segment->points->at(y);
+
+			if (min_ist > temp->ist) {
+				min_ist = temp->ist;
+			}
+			if (max_ist < temp->ist) {
+				max_ist = temp->ist;
+			}
+			average += temp->ist;
+		}
+		average /= segment->points->size();
+
+		size_t peaks_start_index = peak_segment_position[i];
+		size_t peaks_end_index = (i == points.size() - 1) ? peaks.size() : peak_segment_position[i + 1];
+		int count_peaks = 0;
+		for (size_t y = peaks_start_index; y < peaks_end_index; y++) {
+			count_peaks += peaks.at(y)->peaks->size();
+		}
+
+		retStream << segment->segmentid << ";" << min_ist << ";" << max_ist << ";" << average << ";" << count_peaks << "\n";
+	}
+	
+	cout << retStream.str();
+
+}
+
 void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<string> args) {
 	vector<segment_points*> points_average;
 	vector<segment_peaks*> peaks;
@@ -123,7 +158,6 @@ void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<stri
 		peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
 	}
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
 
 	if (find(args.begin(), args.end(), "-d") != args.end()) {
 		printAllSplitSegments(points, points_by_day, peaks, peak_segment_position);
@@ -131,7 +165,13 @@ void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<stri
 	else {
 		printAllSegments(points, points_average, peaks, peak_segment_position);
 	}
+
+	if (find(args.begin(), args.end(), "-stats") != args.end()) {
+		printStats(points, peaks, peak_segment_position);
+	}
 	
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
+
 	freePeaks(peaks);
 	freePoints(points);
 	freePoints(points_average);
@@ -231,7 +271,7 @@ int main(int argc, char *argv[])
 {
 	run(argc, argv);
 
-	_CrtDumpMemoryLeaks();
+	//_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
 	/*cout << "Please press any key to exit the program ..." << endl;

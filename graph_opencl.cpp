@@ -206,7 +206,7 @@ size_t do_opencl_peaks(cl_config* config, size_t count_point_values, size_t coun
 
 	points - vektor obsahujici vsechny segmenty vcetne bodu
 */
-size_t* get_positions_of_points(vector<segment_points*> points) {
+size_t* get_positions_of_points(vector<segment_points*> &points) {
 	size_t malloc_size = points.size() + 1;
 	size_t* segment_positions = (size_t*)malloc(sizeof(size_t) * malloc_size);
 	if (segment_positions == nullptr) {
@@ -238,7 +238,7 @@ size_t* get_positions_of_points(vector<segment_points*> points) {
 	ist_values - preadlokovanane pole pro IST hodnoty
 	average - podminka, zda se jedna o vektor segmentu klouzaveho prumeru
 */
-void get_segments_info(vector<segment_points*> points, float* x_values, float* y_values, float* ist_values, bool average) {
+void get_segments_info(vector<segment_points*> &points, float* x_values, float* y_values, float* ist_values, bool average) {
 	size_t z = 0;
 	for (size_t i = 0; i < points.size(); i++) {
 		segment_points* segment = points.at(i);
@@ -267,7 +267,7 @@ void get_segments_info(vector<segment_points*> points, float* x_values, float* y
 	segment_positions - pozice zacatku segmentu v poli obsahujici vsechny body
 	result_segments_position - pole obsahujici indexy pocatku kazdeho segmentu
 */
-vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segment_points*> points_by_day, 
+vector<segment_peaks*> create_peaks(vector<segment_points*> &points, vector<segment_points*> &points_by_day,
 	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum, size_t* segment_positions, size_t** result_segments_position) {
 	vector<segment_peaks*> results;
 	size_t seg_day = 0;
@@ -329,7 +329,7 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
 	result_segments_position - pole obsahujici indexy pocatku kazdeho segmentu
 */
-vector<segment_peaks*> get_peaks_opencl(cl_config* config, vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position) {
+vector<segment_peaks*> get_peaks_opencl(cl_config* config, vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** result_segments_position) {
 	vector<segment_peaks*> peaks;
 	size_t count_segments = points.size();
 	size_t* segment_positions = get_positions_of_points(points);

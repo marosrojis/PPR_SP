@@ -31,7 +31,7 @@ SVG *svg;
 	peaks - vektor obsahujici vsechny vykyvy
 	peak_segment_position - pole obsahujici indexy zacatku vykyvu segmentu
 */
-void print_all_segments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+void print_all_segments(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_peaks*> &peaks, size_t* peak_segment_position) {
 	size_t peak_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
 		size_t peaks_start_index = peak_segment_position[i];
@@ -48,7 +48,7 @@ points_average - vektor obsahujici vsechny segmenty a body vytvorene pomoci klou
 peaks - vektor obsahujici vsechny vykyvy
 peak_segment_position - pole obsahujici indexy zacatku vykyvu segmentu
 */
-void print_all_split_segments(vector<segment_points*> points, vector<segment_points*> points_by_day, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+void print_all_split_segments(vector<segment_points*> &points, vector<segment_points*> &points_by_day, vector<segment_peaks*> &peaks, size_t* peak_segment_position) {
 	size_t points_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
 		size_t peaks_start_index = peak_segment_position[i];
@@ -64,7 +64,7 @@ void print_all_split_segments(vector<segment_points*> points, vector<segment_poi
 	peaks - vektor obsahujici vsechny vykyvy
 	peak_segment_position - pole obsahujici indexy zacatku vykyvu segmentu
 */
-void print_stats(vector<segment_points*> points, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+void print_stats(vector<segment_points*> &points, vector<segment_peaks*> &peaks, size_t* peak_segment_position) {
 	ostringstream ret_stream;
 	ret_stream << "ID segment;Minimum ist value;Maximum ist value;Average ist value;Found peaks\n";
 
@@ -105,7 +105,7 @@ void print_stats(vector<segment_points*> points, vector<segment_peaks*> peaks, s
 	values - mapa obsahujici vsechny hodnoty measured_value ziskanych z 
 	cfg - config pro spusteni vypoctu (vytvoren z parametru zadane uzivatelem)
 */
-void get_calculate_point(map<size_t, vector<measured_value*>> values, config* cfg) {
+void get_calculate_point(map<size_t, vector<measured_value*>> &values, config* cfg) {
 	vector<segment_points*> points_average;
 	vector<segment_peaks*> peaks;
 	map<size_t, vector<measured_value*>> values_average;
@@ -186,7 +186,7 @@ void get_calculate_point(map<size_t, vector<measured_value*>> values, config* cf
 
 	values - vsechny hodnoty measuredValue ziskane z DB
 */
-map<size_t, vector<measured_value*>> transform_measured_value(vector<measured_value*> values) {
+map<size_t, vector<measured_value*>> transform_measured_value(vector<measured_value*> &values) {
 	map<size_t, vector<measured_value*>> values_map;
 	for (auto &row : values) {
 		map<size_t, vector<measured_value*>>::iterator p = values_map.find(row->segmentid);

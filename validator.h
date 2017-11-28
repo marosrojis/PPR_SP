@@ -7,6 +7,6 @@
 #include <sstream>
 #include "structs.h"
 
-config* validate_input(std::vector<std::string> args);
+config* validate_input(std::vector<std::string> &args);
 
 #endif

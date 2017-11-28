@@ -19,6 +19,6 @@
 using namespace std;
 
 cl_config* prepare_opencl_config();
-vector<segment_peaks*> get_peaks_opencl(cl_config* config, vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position);
+vector<segment_peaks*> get_peaks_opencl(cl_config* config, vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** result_segments_position);
 
 #endif

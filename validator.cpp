@@ -24,7 +24,7 @@ void print_help() {
 
 	args - vstupni parametry uzivatele
 */
-config* validate_input(vector<string> args) {
+config* validate_input(vector<string> &args) {
 	config* cfg = (config*)malloc(sizeof(config));
 
 	for (size_t i = 0; i < args.size(); i++) {

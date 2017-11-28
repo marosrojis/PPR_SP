@@ -52,7 +52,7 @@ segment_peaks* create_segment_peaks(vector<peak*> *peaks, size_t segmentid) {
 	peaks_segment - pole pro ulozeni, kolik vykyvu bylo nalezeno pro konkretni segment
 	size - pocet segmentu
 */
-segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peaks_segment, size_t size) {
+segment_peaks*** parallel_get_peaks(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** peaks_segment, size_t size) {
 	segment_peaks*** data = (segment_peaks***)malloc(sizeof(segment_peaks**) * size);
 	if (data == nullptr) {
 		printf("Malloc memory error\n");
@@ -163,7 +163,7 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
 	peak_segment_position - obsahuje index pro ziskani prvniho dne v ramci segmentu ve vektoru obsahujici vsechny vykyvy
 */
-vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position) {
+vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** peak_segment_position) {
 	vector<segment_peaks*> results;
 	size_t* peaks_segment = (size_t*)malloc(sizeof(size_t) * points.size());
 	if (peaks_segment == nullptr) {
@@ -196,7 +196,7 @@ vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segm
 	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
 	peak_segment_position - obsahuje index pro ziskani prvniho dne v ramci segmentu ve vektoru obsahujici vsechny vykyvy
 */
-vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position) {
+vector<segment_peaks*> get_peaks(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** peak_segment_position) {
 	vector<segment_peaks*> results;
 	size_t seg_day = 0;
 
@@ -284,7 +284,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 
 	values - mapa obsahujici vsechny segmenty spolu se vsemi hodnotami measured_value
 */
-map<size_t, float> get_max_values(map<size_t, vector<measured_value*>> values) {
+map<size_t, float> get_max_values(map<size_t, vector<measured_value*>> &values) {
 	map<size_t, float> results;
 	for (auto &value : values) {
 		float max_value = get_max_value_ist(value.second);
@@ -299,7 +299,7 @@ map<size_t, float> get_max_values(map<size_t, vector<measured_value*>> values) {
 
 	segments - vektor obsahujici vsechny segmenty
 */
-vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) {
+vector<segment_points*> split_segments_by_day(vector<segment_points*> &segments) {
 	vector<segment_points*> results;
 
 	for (auto &row : segments) {
@@ -356,7 +356,7 @@ vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) 
 	max_values - mapa obsahujici maximalni IST hodnota kazdeho segmentu
 	isAverage - podminka pokud se pracuje s body vytvrenych klouzavym prumerem
 */
-vector<segment_points*> get_points_from_values(map<size_t, vector<measured_value*>> values, map<size_t, float> max_values, bool isAverage) {
+vector<segment_points*> get_points_from_values(map<size_t, vector<measured_value*>> &values, map<size_t, float> &max_values, bool isAverage) {
 	vector<segment_points*> results;
 	for (auto &row : values) {
 		size_t i = 0;
@@ -403,7 +403,7 @@ vector<segment_points*> get_points_from_values(map<size_t, vector<measured_value
 	moving_average_size - 1/2 velikosti klouzaveho okenka
 	size - pocet hodnot v segmentu
 */
-measured_value** parallel_calculate_moving_average(vector<measured_value*> values, int moving_average_size, size_t size)
+measured_value** parallel_calculate_moving_average(vector<measured_value*> &values, int moving_average_size, size_t size)
 {
 	measured_value** data = (measured_value**)malloc(sizeof(measured_value*) * size);
 	if (data == nullptr) {
@@ -426,7 +426,7 @@ measured_value** parallel_calculate_moving_average(vector<measured_value*> value
 			for (int y = -moving_average_size; y <= moving_average_size; y++) {
 				sum += values.at(i + y)->ist;
 			}
-			value->ist = sum / MOVING_AVERAGE;
+			value->ist = sum / (float)MOVING_AVERAGE;
 		}
 
 		measured_value* segment_value = values.at(i);
@@ -444,7 +444,7 @@ measured_value** parallel_calculate_moving_average(vector<measured_value*> value
 
 	values_map - vsechny hodnoty measured_value ziskane z DB
 */
-map<size_t, vector<measured_value*>> calculate_moving_average_tbb(map<size_t, vector<measured_value*>> values_map) {
+map<size_t, vector<measured_value*>> calculate_moving_average_tbb(map<size_t, vector<measured_value*>> &values_map) {
 	map<size_t, vector<measured_value*>> results;
 	float sum = 0;
 
@@ -465,7 +465,7 @@ Funkce pro vypocet klouzaveho prumeru pro vsechny segmenty seriove
 
 values_map - vsechny hodnoty measured_value ziskane z DB
 */
-map<size_t, vector<measured_value*>> calculate_moving_average(map<size_t, vector<measured_value*>> values_map) {
+map<size_t, vector<measured_value*>> calculate_moving_average(map<size_t, vector<measured_value*>> &values_map) {
 	map<size_t, vector<measured_value*>> results;
 	float sum = 0;
 
@@ -489,7 +489,7 @@ map<size_t, vector<measured_value*>> calculate_moving_average(map<size_t, vector
 				for (int y = -size; y <= size; y++) {
 					sum += row.second.at(i + y)->ist;
 				}
-				value->ist = sum / MOVING_AVERAGE;
+				value->ist = sum / (float)MOVING_AVERAGE;
 			}
 
 			measured_value* segment_value = row.second.at(i);
@@ -506,7 +506,7 @@ map<size_t, vector<measured_value*>> calculate_moving_average(map<size_t, vector
 /*
 	Funkce pro ziskani maximalni IST hodnoty segmentu
 */
-float get_max_value_ist(vector<measured_value*> values) {
+float get_max_value_ist(vector<measured_value*> &values) {
 	float max_value = 0;
 	for (auto &row : values) {
 		if (max_value < row->ist) {

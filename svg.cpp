@@ -69,7 +69,7 @@ void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, ve
 	print_title(&printer, segmentid, x_max);
 	print_axis(&printer, *values, x_max, y_max, y_min, true);
 	print_polynate_full_segment(&printer, *values, "rgb(0,0,0)");
-	print_polynate_full_segment(&printer, *values_average, "rgb(0,0,255)");
+	//print_polynate_full_segment(&printer, *values_average, "rgb(0,0,255)");
 	
 	for (size_t i = peaks_start_index; i < peaks_end_index; i++) {
 		print_peaks(&printer, *(peaks.at(i)->peaks), y_max, true);

@@ -107,7 +107,7 @@ config* validate_input(vector<string> args) {
 
 		string start_number = args.at(pos + 1);
 		char * p;
-		strtol(start_number.c_str(), &p, 10);
+		long ret = strtol(start_number.c_str(), &p, 10);
 
 		if (*p == 0) {
 			cfg->number_of_start = atoi(start_number.c_str());

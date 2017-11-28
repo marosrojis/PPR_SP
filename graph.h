@@ -9,6 +9,7 @@
 #include <iterator>
 #include "structs.h"
 #include "tbb/parallel_for.h"
+#include "tbb/task_scheduler_init.h"
 
 
 const int MOVING_AVERAGE = 21;
@@ -16,6 +17,7 @@ const int Y_SCALE = 15;
 const int MINUTE = 60;
 const int MIN_MINUTE_FOR_ACTION = 30;
 const int SHOW_PEAKS = 3;
+
 
 using namespace std;
 

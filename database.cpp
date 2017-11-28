@@ -1,17 +1,20 @@
 #include "database.h"
 #include <iostream>
 
-Database::Database()
+Database::Database(const char* file_name)
 {
 	database = NULL;
-	open("data/direcnet.sqlite");
+	if (!open(file_name)) {
+		cout << "Database file not exist!!\n" << endl;
+		exit(1);
+	}
 }
 
 Database::~Database()
 {
 }
 
-bool Database::open(char* filename)
+bool Database::open(const char* filename)
 {
 	if (sqlite3_open(filename, &database) == SQLITE_OK)
 		return true;

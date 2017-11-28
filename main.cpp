@@ -7,6 +7,8 @@
 #include "database.h"
 #include "graph.h"
 #include "svg.h"
+#include "validator.h"
+#include "free_function.h"
 #include "tinyxml2.h"
 
 #include "graph_opencl.h"
@@ -20,47 +22,6 @@ using namespace tinyxml2;
 
 Database *db;
 SVG *svg;
-
-void freeMeasuredValues(vector<measuredValue*> values) {
-	for (auto &row : values) {
-		free(row);
-	}
-}
-
-void freeMapMeasuredValues(map<size_t, vector<measuredValue*>> values) {
-	for (auto &segment : values) {
-		for (auto &value : segment.second) {
-			free(value);
-		}
-	}
-}
-
-void freePoints(vector<segment_points*> points) {
-	for (auto &segment : points) {
-		for (auto &point : *(segment->points)) {
-			free(point);
-		}
-		delete(segment->points);
-		free(segment);
-	}
-}
-
-void freeSegmentPoints(vector<segment_points*> points) {
-	for (auto &segment : points) {
-		delete(segment->points);
-		free(segment);
-	}
-}
-
-void freePeaks(vector<segment_peaks*> peaks) {
-	for (auto &segment : peaks) {
-		for (auto &peak : *(segment->peaks)) {
-			free(peak);
-		}
-		delete(segment->peaks);
-		free(segment);
-	}
-}
 
 void printAllSegments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
 	size_t peak_position = 0;
@@ -115,7 +76,7 @@ void printStats(vector<segment_points*> points, vector<segment_peaks*> peaks, si
 
 }
 
-void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<string> args) {
+void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<string> args, config* cfg) {
 	vector<segment_points*> points_average;
 	vector<segment_peaks*> peaks;
 	map<size_t, vector<measuredValue*>> values_average;
@@ -130,53 +91,59 @@ void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<stri
 		return;
 	}
 
-	
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	for (size_t i = 0; i < cfg->number_of_start; i++) {
+		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	if (find(args.begin(), args.end(), "-serial") != args.end()) {
-		values_average = calculate_moving_average(values);
-		if (values_average.size() == 0) {
-			return;
+		if (cfg->run_serial) {
+			values_average = calculate_moving_average(values);
+			if (values_average.size() == 0) {
+				return;
+			}
+			points_average = get_points_from_values(values_average, max_values, true);
+			peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
 		}
-		points_average = get_points_from_values(values_average, max_values, true);
-		peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
-	}
-	else if (find(args.begin(), args.end(), "-tbb") != args.end()) {
-		values_average = calculate_moving_average_tbb(values);
-		if (values_average.size() == 0) {
-			return;
+		else if (cfg->run_tbb) {
+			values_average = calculate_moving_average_tbb(values);
+			if (values_average.size() == 0) {
+				return;
+			}
+			points_average = get_points_from_values(values_average, max_values, true);
+			peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
 		}
-		points_average = get_points_from_values(values_average, max_values, true);
-		peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
-	}
-	else if (find(args.begin(), args.end(), "-gpu") != args.end()) {
-		values_average = calculate_moving_average(values);
-		if (values_average.size() == 0) {
-			return;
+		else if (cfg->run_gpu) {
+			values_average = calculate_moving_average(values);
+			if (values_average.size() == 0) {
+				return;
+			}
+			points_average = get_points_from_values(values_average, max_values, true);
+			peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
 		}
-		points_average = get_points_from_values(values_average, max_values, true);
-		peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
-	}
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
 
-	if (find(args.begin(), args.end(), "-d") != args.end()) {
+		if (i + 1 < cfg->number_of_start) {
+			free_points(points_average);
+			free_map_measured_values(values_average);
+			free_peaks(peaks);
+		}
+	}
+
+	if (cfg->split_segments) {
 		printAllSplitSegments(points, points_by_day, peaks, peak_segment_position);
 	}
 	else {
 		printAllSegments(points, points_average, peaks, peak_segment_position);
 	}
 
-	if (find(args.begin(), args.end(), "-stats") != args.end()) {
+	if (cfg->print_stats) {
 		printStats(points, peaks, peak_segment_position);
 	}
 	
-	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
-
-	freePeaks(peaks);
-	freePoints(points);
-	freePoints(points_average);
-	freeMapMeasuredValues(values_average);
-	freeSegmentPoints(points_by_day);
+	free_peaks(peaks);
+	free_points(points);
+	free_points(points_average);
+	free_map_measured_values(values_average);
+	free_segment_points(points_by_day);
 	free(peak_segment_position);
 }
 
@@ -196,8 +163,8 @@ map<size_t, vector<measuredValue*>> transform_measured_value(vector<measuredValu
 	return values_map;
 }
 
-void startProgram(vector<string> args) {
-	db = new Database();
+void start_program(vector<string> args, config* cfg) {
+	db = new Database(cfg->db_file_name);
 	svg = new SVG();
 
 	vector<measuredValue*> values = db->get_measured_value();
@@ -207,64 +174,20 @@ void startProgram(vector<string> args) {
 		return;
 	}
 	
-	get_calculate_point(values_map, args);
+	get_calculate_point(values_map, args, cfg);
 
-	freeMeasuredValues(values);
+	free_measured_values(values);
 	delete(svg);
 	delete(db);
 }
 
-void printHelp() {
-	ostringstream retStream;
-
-	retStream << "Usage: PPR.exe [-h] [-serial | -tbb | -gpu] [-stats] [-d]\n\n";
-	retStream << "Options:\n";
-	retStream << "\t-d\t\t Split segment on days in graph.\n";
-	retStream << "\t-h\t\t Show help.\n";
-	retStream << "\t-gpu\t\t Start parallel version using GPU.\n";
-	retStream << "\t-serial\t\t Start serial version.\n";
-	retStream << "\t-tbb\t\t Start parallel version using Threading Building Blocks.\n\n";
-
-	cout << retStream.str();
-}
-
-bool validateInput(vector<string> args) {
-	for (auto &input : args) {
-		if (!(input == "-h" || input == "-serial" || input == "-tbb" || input == "-gpu" || input == "-stats" || input == "-d")) {
-			cout << "Invalid argument \""<< input << ".\"\n" << endl;
-			printHelp();
-			return false;
-		}
-	}
-
-	if (args.size() == 0 || find(args.begin(), args.end(), "-h") != args.end()) {
-		printHelp();
-		return false;
-	}
-
-	if (!(find(args.begin(), args.end(), "-serial") != args.end() || find(args.begin(), args.end(), "-tbb") != args.end() ||
-		find(args.begin(), args.end(), "-gpu") != args.end())) {
-		cout << "Select version of program (serial, tbb or gpu).\n\n" << endl;
-		printHelp();
-		return false;
-	}
-
-	if ((find(args.begin(), args.end(), "-serial") != args.end() && find(args.begin(), args.end(), "-tbb") != args.end()) || 
-		(find(args.begin(), args.end(), "-serial") != args.end() && find(args.begin(), args.end(), "-gpu") != args.end()) ||
-		find(args.begin(), args.end(), "-gpu") != args.end() && find(args.begin(), args.end(), "-tbb") != args.end()) {
-		cout << "Use only one version of program!\n\n" << endl;
-		printHelp();
-		return false;
-	}
-
-	return true;
-}
-
 void run(int argc, char *argv[]) {
 	vector<string> args(argv + 1, argv + argc + !argc);
-	if (validateInput(args)) {
-		startProgram(args);
+	config* cfg = validate_input(args);
+	if (cfg->valid_input) {
+		start_program(args, cfg);
 	}
+	free(cfg);
 }
 
 int main(int argc, char *argv[])

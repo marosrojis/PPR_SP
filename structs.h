@@ -40,4 +40,17 @@ typedef struct segment_peaks
 	size_t segmentid;
 } SEGMENT_PEAKS;
 
+typedef struct config
+{
+	bool run_serial = false;
+	bool run_tbb = false;
+	bool run_gpu = false;
+	int number_of_threads = 4;
+	bool split_segments = false;
+	bool print_stats = false;
+	bool valid_input = false;
+	size_t number_of_start;
+	const char* db_file_name;
+} CONFIG;
+
 #endif

@@ -41,6 +41,7 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 		return nullptr;
 	}
 
+	tbb::task_scheduler_init init(4);
 	tbb::parallel_for(size_t(0), size, [&](size_t a) {
 		vector<point*> segment = *(points.at(a)->points);
 
@@ -78,7 +79,7 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 						peak* temp = (peak*)malloc(sizeof(peak));
 						if (temp == nullptr) {
 							printf("Malloc memory error\n");
-							return data;
+							return;
 						}
 
 						temp->x1 = temp_peak;
@@ -124,7 +125,7 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 		segment_peaks** result = (segment_peaks**)malloc(sizeof(segment_peaks*) * peaks_in_segment.size());
 		if (result == nullptr) {
 			printf("Malloc memory error\n");
-			return data;
+			return;
 		}
 
 		copy(peaks_in_segment.begin(), peaks_in_segment.end(), stdext::checked_array_iterator<segment_peaks**>(result, peaks_in_segment.size()));

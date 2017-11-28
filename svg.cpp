@@ -64,11 +64,11 @@ void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, ve
 	printer.PushAttribute("version", "1.1");
 	printer.PushAttribute("style", "padding: 40px 25px 15px 50px");
 	printer.PushAttribute("width", x_max->x);
-	printer.PushAttribute("height", y_max->y + 25);
+	printer.PushAttribute("height", y_max->y + 55);
 
 	print_title(&printer, segmentid, x_max);
 	print_axis(&printer, *values, x_max, y_max, y_min, true);
-	print_polynate_full_segment(&printer, *values, "rgb(0,0,0)");
+	print_polynate_full_segment(&printer, *values, "rgb(0,0,174)");
 	//print_polynate_full_segment(&printer, *values_average, "rgb(0,0,255)");
 	
 	for (size_t i = peaks_start_index; i < peaks_end_index; i++) {
@@ -143,16 +143,16 @@ void SVG::print_graph_split_segment(vector<point*> *points, vector<segment_point
 	printer.PushAttribute("version", "1.1");
 	printer.PushAttribute("style", "padding: 25px 25px 15px 50px");
 	printer.PushAttribute("width", x_max->x);
-	printer.PushAttribute("height", (y_max->y + 75) * days_in_segment);
+	printer.PushAttribute("height", (y_max->y + 105) * days_in_segment);
 
 
 	for (size_t i = 0; i < days_in_segment; i++) {
-		create_g_transform(&printer, i * (y_max->y + 65) + 25);
+		create_g_transform(&printer, i * (y_max->y + 85) + 25);
 		if (i == 0) {
 			print_title(&printer, segmentid, x_max);
 		}
 		print_axis(&printer, *points, x_max, y_max, y_min, false);
-		print_polynate_split_segment(&printer, *(points_by_day.at(*point_position + i)->points), "rgb(0,0,0)");
+		print_polynate_split_segment(&printer, *(points_by_day.at(*point_position + i)->points), "rgb(0,0,174)");
 		
 		if (i + peaks_start_index < peaks_end_index) {
 			print_peaks(&printer, *(peaks.at(i + peaks_start_index)->peaks), y_max, false);
@@ -298,6 +298,38 @@ void SVG::print_axis(tinyxml2::XMLPrinter* printer, vector<point*> &values, poin
 	(*printer).PushAttribute("fill", "black");
 	(*printer).PushAttribute("font-size", "15");
 	(*printer).PushText("time [hh:mm]");
+	(*printer).CloseElement();
+
+	(*printer).OpenElement("text");
+	(*printer).PushAttribute("x", 0);
+	(*printer).PushAttribute("y", y_max->y + TIME_MARGIN + 30);
+	(*printer).PushAttribute("fill", "black");
+	(*printer).PushAttribute("font-size", "15");
+	(*printer).PushText("Measured values");
+	(*printer).CloseElement();
+
+	(*printer).OpenElement("line");
+	(*printer).PushAttribute("x1", 120);
+	(*printer).PushAttribute("y1", y_max->y + TIME_MARGIN + 25);
+	(*printer).PushAttribute("x2", 170);
+	(*printer).PushAttribute("y2", y_max->y + TIME_MARGIN + 25);
+	(*printer).PushAttribute("style", "fill: white; stroke: rgb(0,0,174); stroke-width: 10;");
+	(*printer).CloseElement();
+
+	(*printer).OpenElement("text");
+	(*printer).PushAttribute("x", 190);
+	(*printer).PushAttribute("y", y_max->y + TIME_MARGIN + 30);
+	(*printer).PushAttribute("fill", "black");
+	(*printer).PushAttribute("font-size", "15");
+	(*printer).PushText("Estimated peaks");
+	(*printer).CloseElement();
+
+	(*printer).OpenElement("line");
+	(*printer).PushAttribute("x1", 310);
+	(*printer).PushAttribute("y1", y_max->y + TIME_MARGIN + 25);
+	(*printer).PushAttribute("x2", 360);
+	(*printer).PushAttribute("y2", y_max->y + TIME_MARGIN + 25);
+	(*printer).PushAttribute("style", "fill:green; stroke: green; opacity: 0.25; stroke-width: 10;");
 	(*printer).CloseElement();
 
 	if (full_graph) {

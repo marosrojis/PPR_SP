@@ -153,7 +153,7 @@ void get_calculate_point(map<size_t, vector<measured_value*>> &values, config* c
 			free(config);
 		}
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
+		std::cout << "Time = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms" << std::endl;
 
 		if (i + 1 < cfg->number_of_start) {
 			free_points(points_average);

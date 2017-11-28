@@ -2,10 +2,19 @@
 
 using namespace std;
 
+/*
+	Komparator pro serazeni vektoru vykyvu
+*/
 bool compareBySum(const peak* a, const peak* b) {
 	return a->sum > b->sum;
 }
 
+/*
+	Vytvoreni vektoru obsahujici maximalne 3 vykyvy pro jeden den segmentu
+	
+	peaks - vektor nalezenych vykyvu
+	segmentid - ID segmentu
+*/
 segment_peaks* create_segment_peaks(vector<peak*> *peaks, size_t segmentid) {
 	vector<peak*> peaks_in_day = *peaks;
 	sort(peaks_in_day.begin(), peaks_in_day.end(), compareBySum);
@@ -34,6 +43,15 @@ segment_peaks* create_segment_peaks(vector<peak*> *peaks, size_t segmentid) {
 	return seg_peaks;
 }
 
+/*
+	Funkce pro nalezeni vsech vykyvu ve vsech segmentech. Jedna se o fuknci pro paralelni zpracovani pomoci TBB.
+
+	points - vektor obsahujici vsechny segmenty a jejich body
+	points_average - vektor obsahujici vsechny segmenty a body vytvorene pomoci klouzaveho prumeru
+	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
+	peaks_segment - pole pro ulozeni, kolik vykyvu bylo nalezeno pro konkretni segment
+	size - pocet segmentu
+*/
 segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peaks_segment, size_t size) {
 	segment_peaks*** data = (segment_peaks***)malloc(sizeof(segment_peaks**) * size);
 	if (data == nullptr) {
@@ -137,6 +155,14 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> points, vector<segme
 	return data;
 }
 
+/*
+	Funkce pro ziskani vsech vykyvu pomoci TBB
+
+	points - vektor obsahujici vsechny segmenty a jejich body
+	points_average - vektor obsahujici vsechny segmenty a body vytvorene pomoci klouzaveho prumeru
+	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
+	peak_segment_position - obsahuje index pro ziskani prvniho dne v ramci segmentu ve vektoru obsahujici vsechny vykyvy
+*/
 vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position) {
 	vector<segment_peaks*> results;
 	size_t* peaks_segment = (size_t*)malloc(sizeof(size_t) * points.size());
@@ -162,7 +188,15 @@ vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> points, vector<segm
 	return results;
 }
 
-vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** segments_position) {
+/*
+	Funkce pro ziskani vsech vykyvu
+
+	points - vektor obsahujici vsechny segmenty a jejich body
+	points_average - vektor obsahujici vsechny segmenty a body vytvorene pomoci klouzaveho prumeru
+	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
+	peak_segment_position - obsahuje index pro ziskani prvniho dne v ramci segmentu ve vektoru obsahujici vsechny vykyvy
+*/
+vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** peak_segment_position) {
 	vector<segment_peaks*> results;
 	size_t seg_day = 0;
 
@@ -217,7 +251,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 			i++;
 		}
 		
-		(*segments_position)[a] = results.size();
+		(*peak_segment_position)[a] = results.size();
 		while (points.at(a)->segmentid != points_by_day.at(seg_day)->segmentid) {
 			seg_day++;
 		}
@@ -245,6 +279,11 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 	return results;
 }
 
+/*
+	Funkce pro ziskani maximalnich IST hodnot vsech segmentu
+
+	values - mapa obsahujici vsechny segmenty spolu se vsemi hodnotami measured_value
+*/
 map<size_t, float> get_max_values(map<size_t, vector<measured_value*>> values) {
 	map<size_t, float> results;
 	for (auto &value : values) {
@@ -255,18 +294,27 @@ map<size_t, float> get_max_values(map<size_t, vector<measured_value*>> values) {
 	return results;
 }
 
+/*
+	Funkce pro rozdeleni segmentu na jednotlive dny
+
+	segments - vektor obsahujici vsechny segmenty
+*/
 vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) {
 	vector<segment_points*> results;
 
 	for (auto &row : segments) {
 		size_t i = 0;
-		size_t vectorSize = row->points->size();
-		vector<point*> *points = new vector<point*>(vectorSize);
+		size_t vector_size = row->points->size();
+		vector<point*> *points = new vector<point*>(vector_size);
+		if (points == nullptr) {
+			printf("Malloc memory error\n");
+			return results;
+		}
 
-		int64_t lastDay = row->points->at(0)->second;
+		int64_t last_day = row->points->at(0)->second;
 		for (size_t y = 0; y < row->points->size(); y++) {
 			point* value = row->points->at(y);		
-			if (lastDay > value->second) {
+			if (last_day > value->second) { // pokud je pocet sekund posledniho prochazeneho bodu vetsi nez pocet sekund aktualne prochazeneho bodu
 				points->resize(i);
 				segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
 				if (seg_points == nullptr) {
@@ -279,13 +327,13 @@ vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) 
 				seg_points->segmentid = row->segmentid;
 				results.push_back(seg_points);
 
-				vectorSize -= i;
-				points = new vector<point*>(vectorSize);
+				vector_size -= i;
+				points = new vector<point*>(vector_size);
 				i = 0;
 			}
 			(*points)[i] = value;
 			i++;
-			lastDay = value->second;
+			last_day = value->second;
 		}
 		segment_points* seg_points = (segment_points*)malloc(sizeof(segment_points));
 		if (seg_points == nullptr) {
@@ -301,6 +349,13 @@ vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) 
 	return results;
 }
 
+/*
+	Funkce pro prepocitani hodnot ziskanych z databaze a nasledne vytvoreni bodu pro vykresleni do grafu
+
+	values - vsechny hodnoty measured_value ziskane z DB
+	max_values - mapa obsahujici maximalni IST hodnota kazdeho segmentu
+	isAverage - podminka pokud se pracuje s body vytvrenych klouzavym prumerem
+*/
 vector<segment_points*> get_points_from_values(map<size_t, vector<measured_value*>> values, map<size_t, float> max_values, bool isAverage) {
 	vector<segment_points*> results;
 	for (auto &row : values) {
@@ -341,6 +396,13 @@ vector<segment_points*> get_points_from_values(map<size_t, vector<measured_value
 	return results;
 }
 
+/*
+	Funkce pro vypocet klouzaveho prumeru jednoho segmentu paralelne pomoci TBB
+
+	values - vsechny hodnoty measured_value ziskane z DB
+	moving_average_size - 1/2 velikosti klouzaveho okenka
+	size - pocet hodnot v segmentu
+*/
 measured_value** parallel_calculate_moving_average(vector<measured_value*> values, int moving_average_size, size_t size)
 {
 	measured_value** data = (measured_value**)malloc(sizeof(measured_value*) * size);
@@ -377,6 +439,11 @@ measured_value** parallel_calculate_moving_average(vector<measured_value*> value
 	return data;
 }
 
+/*
+	Funkce pro vypocet klouzaveho prumeru pro vsechny segmenty paralelne pomoci TBB
+
+	values_map - vsechny hodnoty measured_value ziskane z DB
+*/
 map<size_t, vector<measured_value*>> calculate_moving_average_tbb(map<size_t, vector<measured_value*>> values_map) {
 	map<size_t, vector<measured_value*>> results;
 	float sum = 0;
@@ -393,6 +460,11 @@ map<size_t, vector<measured_value*>> calculate_moving_average_tbb(map<size_t, ve
 	return results;
 }
 
+/*
+Funkce pro vypocet klouzaveho prumeru pro vsechny segmenty seriove
+
+values_map - vsechny hodnoty measured_value ziskane z DB
+*/
 map<size_t, vector<measured_value*>> calculate_moving_average(map<size_t, vector<measured_value*>> values_map) {
 	map<size_t, vector<measured_value*>> results;
 	float sum = 0;
@@ -431,6 +503,9 @@ map<size_t, vector<measured_value*>> calculate_moving_average(map<size_t, vector
 	return results;
 }
 
+/*
+	Funkce pro ziskani maximalni IST hodnoty segmentu
+*/
 float get_max_value_ist(vector<measured_value*> values) {
 	float max_value = 0;
 	for (auto &row : values) {

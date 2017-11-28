@@ -10,13 +10,16 @@
 
 using namespace std;
 
+/*
+	Trida slouzici pro praci s databazi
+*/
 class Database
 {
 public:
 	Database(const char* file_name);
 	~Database();
 
-	bool open(const char* filename);
+	bool open(const char* file_name);
 	vector<vector<string>> query(char* query);
 	vector<measured_value*> get_measured_value();
 	vector<int> get_all_segments_id();

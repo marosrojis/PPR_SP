@@ -2,6 +2,11 @@
 
 using namespace std;
 
+/*
+	Funkce vrati bod s nejvetsi hodnotou X
+
+	values - vektor obsahujici vsechny body segmentu
+*/
 point* get_max_x_point(vector<point*> values) {
 	float max = 0;
 	point* point_max = NULL;
@@ -14,6 +19,11 @@ point* get_max_x_point(vector<point*> values) {
 	return point_max;
 }
 
+/*
+	Funkce vrati bod s nejvetsi hodnotou Y
+
+	values - vektor obsahujici vsechny body segmentu
+*/
 point* get_max_y_point(vector<point*> values) {
 	float max = 0;
 	point* point_max = NULL;
@@ -26,6 +36,17 @@ point* get_max_y_point(vector<point*> values) {
 	return point_max;
 }
 
+/*
+	Funkce najde maximalni a minimalni body X, Y
+
+	values - vektor obsahujici vsechny body segmentu
+	x_max_point - alokovany ukazazel pro maximalni X bod
+	x_min_point - alokovany ukazazel pro minimalni X bod
+	y_max_point - alokovany ukazazel pro maximalni Y bod
+	y_min_point - alokovany ukazazel pro minimalni Y bod
+
+	
+*/
 void find_max_min_x_y_points(vector<point*> values, point* x_max_point, point* y_max_point, point* x_min_point, point* y_min_point) {
 	float x_max = 0, y_max = 0, x_min = values.at(0)->x, y_min = values.at(0)->y;
 	
@@ -55,6 +76,11 @@ void find_max_min_x_y_points(vector<point*> values, point* x_max_point, point* y
 	}
 }
 
+/*
+	Funkce prevede sekundy na casovy format [hh:mm]
+
+	seconds - pocet sekund
+*/
 string get_time(unsigned int seconds) {
 	int hours, minutes;
 
@@ -63,16 +89,16 @@ string get_time(unsigned int seconds) {
 
 	minutes = minutes % SECOND_TO_MINUTE;
 
-	ostringstream retStream;
+	ostringstream ret_stream;
 	if (std::to_string(hours).length() == 1) {
-		retStream << "0";
+		ret_stream << "0";
 	}
-	retStream << hours << ":";
+	ret_stream << hours << ":";
 	if (std::to_string(minutes).length() == 1) {
-		retStream << "0";
+		ret_stream << "0";
 	}
-	retStream << minutes;
+	ret_stream << minutes;
 
-	string time = retStream.str();
+	string time = ret_stream.str();
 	return time;
 }

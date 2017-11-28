@@ -2,20 +2,28 @@
 
 using namespace std;
 
+/*
+	Vytisknuti napovedy pro pouziti aplikace
+*/
 void print_help() {
-	ostringstream retStream;
+	ostringstream ret_stream;
 
-	retStream << "Usage: PPR.exe [-h] [-serial | -tbb | -gpu] [-stats] [-d]\n\n";
-	retStream << "Options:\n";
-	retStream << "\t-d\t\t Split segment on days in graph.\n";
-	retStream << "\t-h\t\t Show help.\n";
-	retStream << "\t-gpu\t\t Start parallel version using GPU.\n";
-	retStream << "\t-serial\t\t Start serial version.\n";
-	retStream << "\t-tbb\t\t Start parallel version using Threading Building Blocks.\n\n";
+	ret_stream << "Usage: PPR.exe [-h] [-serial | -tbb | -gpu] [-stats] [-d]\n\n";
+	ret_stream << "Options:\n";
+	ret_stream << "\t-d\t\t Split segment on days in graph.\n";
+	ret_stream << "\t-h\t\t Show help.\n";
+	ret_stream << "\t-gpu\t\t Start parallel version using GPU.\n";
+	ret_stream << "\t-serial\t\t Start serial version.\n";
+	ret_stream << "\t-tbb\t\t Start parallel version using Threading Building Blocks.\n\n";
 
-	cout << retStream.str();
+	cout << ret_stream.str();
 }
 
+/*
+	Validace vstupnich parametru od uzivatele. Funkce vrati strukturu config obsahujici nastaveni pro spusteni aplikace.
+
+	args - vstupni parametry uzivatele
+*/
 config* validate_input(vector<string> args) {
 	config* cfg = (config*)malloc(sizeof(config));
 

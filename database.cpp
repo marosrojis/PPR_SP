@@ -1,6 +1,10 @@
 #include "database.h"
 #include <iostream>
 
+/* 
+	Konstruktor tridy pro praci s databazi
+	file_name - nazev SQLite souboru	
+*/
 Database::Database(const char* file_name)
 {
 	database = NULL;
@@ -14,19 +18,25 @@ Database::~Database()
 {
 }
 
-bool Database::open(const char* filename)
+/* 
+	Metoda pro otevreni SQLite databaze
+	file_name - nazev SQLite souboru	
+*/
+bool Database::open(const char* file_name)
 {
-	if (sqlite3_open(filename, &database) == SQLITE_OK)
+	if (sqlite3_open(file_name, &database) == SQLITE_OK)
 		return true;
 
 	return false;
 }
 
+/*
+	Provedeni dotazu pro ziskani vsech hodnot z tabulky measuredValue
+*/
 vector<measured_value*> Database::get_measured_value() {
 	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat) FROM measuredValue WHERE ist IS NOT NULL;");
 	vector<measured_value*> values;
-	for (auto &row : results) // access by reference to avoid copying
-	{
+	for (auto &row : results) {
 		measured_value* value = (measured_value*) malloc(sizeof(measured_value));
 		if (value == nullptr) {
 			for (size_t i = 0; i < values.size(); i++) {
@@ -48,6 +58,9 @@ vector<measured_value*> Database::get_measured_value() {
 	return values;
 }
 
+/*
+	Ziskani vsech existujicich ID segmentu
+*/
 vector<int> Database::get_all_segments_id() {
 	vector<vector<string>> results = query("SELECT id FROM timesegment ORDER BY id;");
 	vector<int> segmentsId;
@@ -59,6 +72,10 @@ vector<int> Database::get_all_segments_id() {
 	return segmentsId;
 }
 
+/*
+	Metoda pro provedeni SELECT dotazu pro ziskani dat z DB
+	query - SQL dotaz
+*/
 vector<vector<string>> Database::query(char* query)
 {
 	sqlite3_stmt *statement;
@@ -68,31 +85,25 @@ vector<vector<string>> Database::query(char* query)
 	{
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
-		while (true)
-		{
+		while (true) {
 			result = sqlite3_step(statement);
 
-			if (result == SQLITE_ROW)
-			{
+			if (result == SQLITE_ROW) {
 				vector<string> values;
-				for (int col = 0; col < cols; col++)
-				{
+				for (int col = 0; col < cols; col++) {
 					std::string  val;
 					char * ptr = (char*)sqlite3_column_text(statement, col);
 
-					if (ptr)
-					{
+					if (ptr) {
 						val = ptr;
 					}
-					else val = ""; // this can be commented out since std::string  val;
-								   // initialize variable 'val' to empty string anyway
+					else val = "";
 
-					values.push_back(val);  // now we will never push NULL
+					values.push_back(val);
 				}
 				results.push_back(values);
 			}
-			else
-			{
+			else {
 				break;
 			}
 
@@ -107,11 +118,17 @@ vector<vector<string>> Database::query(char* query)
 	return results;
 }
 
+/*
+	Uzavreni spojeni s databazi
+*/
 void Database::close()
 {
 	sqlite3_close(database);
 }
 
+/*
+	Metoda pro ziskani poctu sekund od zacatku dne
+*/
 unsigned int Database::get_seconds_of_day(int seconds) {
 	const unsigned int cseconds_in_day = 86400;
 

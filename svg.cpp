@@ -8,6 +8,16 @@ SVG::~SVG()
 {
 }
 
+/*
+	Funkce pro vytvoreni grafu segmentu
+
+	values - vektor obsahujici body segmentu, ktere se maji vykreslit
+	values_average - vektor obsahujici body segmentu vzniklych klouzavym prumerem, ktere se maji vykreslit
+	peaks - vektor obsahujici vsechny vykyvy
+	peaks_start_index - index pro prvni vykyv vykreslovaneho segmentu
+	peaks_end_index - index pro posledni vykyv vykreslovaneho segmentu
+	segmentid - ID segmentu
+*/
 void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, vector<segment_peaks*> peaks, size_t peaks_start_index, size_t peaks_end_index, size_t segmentid) {
 	FILE * pFile;
 	std::stringstream ss;
@@ -74,6 +84,17 @@ void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, ve
 	free(y_min);
 }
 
+/*
+	Funkce pro vytvoreni grafu segmentu
+
+	values - vektor obsahujici body segmentu, ktere se maji vykreslit
+	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
+	point_position - pole obsahujici indexy zacatku jednotlivych segmentu ve vektoru points_by_day
+	peaks - vektor obsahujici vsechny vykyvy
+	peaks_start_index - index pro prvni vykyv vykreslovaneho segmentu
+	peaks_end_index - index pro posledni vykyv vykreslovaneho segmentu
+	segmentid - ID segmentu
+*/
 void SVG::print_graph_split_segment(vector<point*> *points, vector<segment_points*> points_by_day, size_t* point_position, vector<segment_peaks*> peaks, size_t peaks_start_index, size_t peaks_end_index, size_t segmentid) {
 	FILE * pFile;
 	std::stringstream ss;
@@ -150,36 +171,55 @@ void SVG::print_graph_split_segment(vector<point*> *points, vector<segment_point
 	free(y_min);
 }
 
+/* 
+	Vykresleni krivny pro cely segment (jeden graf)
+
+	values - body pro vykresleni
+	color - barva krivky
+*/
 void SVG::print_polynate_full_segment(tinyxml2::XMLPrinter* printer, vector<point*> values, std::string color) {
-	std::ostringstream retStream;
+	std::ostringstream ret_stream;
 
 	for (auto &row : values) {
-		retStream << row->x << "," << row->y << " ";
+		ret_stream << row->x << "," << row->y << " ";
 	}
 
 	(*printer).OpenElement("polyline");
-	(*printer).PushAttribute("points", retStream.str().c_str());
+	(*printer).PushAttribute("points", ret_stream.str().c_str());
 	(*printer).PushAttribute("stroke", color.c_str());
 	(*printer).PushAttribute("stroke-width", "1.5");
 	(*printer).PushAttribute("fill", "transparent");
 	(*printer).CloseElement();
 }
 
+/*
+Vykresleni krivny pro cely segment rozdeleny na jednotlive dny
+
+values - body pro vykresleni
+color - barva krivky
+*/
 void SVG::print_polynate_split_segment(tinyxml2::XMLPrinter* printer, vector<point*> values, std::string color) {
-	std::ostringstream retStream;
+	std::ostringstream ret_stream;
 
 	for (auto &row : values) {
-		retStream << row->second / SVG::SECOND_IN_MINUTE << "," << row->y << " ";
+		ret_stream << row->second / SVG::SECOND_IN_MINUTE << "," << row->y << " ";
 	}
 
 	(*printer).OpenElement("polyline");
-	(*printer).PushAttribute("points", retStream.str().c_str());
+	(*printer).PushAttribute("points", ret_stream.str().c_str());
 	(*printer).PushAttribute("stroke", color.c_str());
 	(*printer).PushAttribute("stroke-width", "1.5");
 	(*printer).PushAttribute("fill", "transparent");
 	(*printer).CloseElement();
 }
 
+/*
+	Zvyrazneni vykyvu v grafu
+
+	peaks - vykyvy v segmentu
+	y_max - maximalni Y bod v grafu
+	full_graph - podminka, zda vykresleny graf je rozdelen na jednotlive dny v ramci segmentu
+*/
 void SVG::print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, point* y_max, bool full_graph) {
 	float x1 = 0;
 	float x2 = 0;
@@ -204,6 +244,9 @@ void SVG::print_peaks(tinyxml2::XMLPrinter* printer, vector<peak*> peaks, point*
 	}
 }
 
+/*
+	Vykresleni ramce okolo grafu
+*/
 void SVG::print_border(tinyxml2::XMLPrinter* printer) {
 	(*printer).OpenElement("rect");
 	(*printer).PushAttribute("x", 0);
@@ -214,6 +257,15 @@ void SVG::print_border(tinyxml2::XMLPrinter* printer) {
 	(*printer).CloseElement();
 }
 
+/*
+	Vykresleni X a Y osy v grafu
+
+	values - body vykreslene v grafu
+	x_max - maximalni X bod v grafu
+	y_max - maximalni Y bod v grafu
+	y_min - minimalni Y bod v grafu
+	full_graph - podminka, zda vykresleny graf je rozdelen na jednotlive dny v ramci segmentu
+*/
 void SVG::print_axis(tinyxml2::XMLPrinter* printer, vector<point*> values, point* x_max, point* y_max, point* y_min, bool full_graph) {
 	(*printer).OpenElement("line");
 	(*printer).PushAttribute("x1", 0);
@@ -256,6 +308,14 @@ void SVG::print_axis(tinyxml2::XMLPrinter* printer, vector<point*> values, point
 	}
 }
 
+/*
+	Popis X a Y os v grafu. Soubor obsahuje pouze jeden graf (cely segment).
+
+	values - body vykreslene v grafu
+	x_max - maximalni X bod v grafu
+	y_max - maximalni Y bod v grafu
+	y_min - minimalni Y bod v grafu
+*/
 void SVG::label_of_axis_full_segment(tinyxml2::XMLPrinter* printer, vector<point*> values, point* x_max, point* y_max, point* y_min) {
 	size_t i = 0;
 	for (auto &value : values) {
@@ -319,6 +379,14 @@ void SVG::label_of_axis_full_segment(tinyxml2::XMLPrinter* printer, vector<point
 	}
 }
 
+/*
+	Popis X a Y os v grafu. Soubor obsahuje pouze vice grafu rozdelenych po jednotlivych dnech.
+
+	values - body vykreslene v grafu
+	x_max - maximalni X bod v grafu
+	y_max - maximalni Y bod v grafu
+	y_min - minimalni Y bod v grafu
+*/
 void SVG::label_of_axis_split_segment(tinyxml2::XMLPrinter* printer, point* x_max, point* y_max, point* y_min) {
 	for (int i = 0; i <= 15; i++) {
 		int value = i * 96;
@@ -371,23 +439,32 @@ void SVG::label_of_axis_split_segment(tinyxml2::XMLPrinter* printer, point* x_ma
 		(*printer).CloseElement();
 	}
 }
+
+/*
+	Vytvoreni elementu G v souboru
+
+	y - Y hodnota pro transformaci
+*/
 void SVG::create_g_transform(tinyxml2::XMLPrinter* printer, float y) {
-	std::ostringstream retStream;
-	retStream << "translate(0,  " << y << ")";
+	std::ostringstream ret_stream;
+	ret_stream << "translate(0,  " << y << ")";
 
 	(*printer).OpenElement("g");
-	(*printer).PushAttribute("transform", retStream.str().c_str());
+	(*printer).PushAttribute("transform", ret_stream.str().c_str());
 }
 
+/*
+	Vykresleni nazvu grafu
+*/
 void SVG::print_title(tinyxml2::XMLPrinter* printer, size_t segmentid, point* x_max) {
-	std::ostringstream retStream;
-	retStream << "Segment " << segmentid;
+	std::ostringstream ret_stream;
+	ret_stream << "Segment " << segmentid;
 
 	(*printer).OpenElement("text");
 	(*printer).PushAttribute("x", (x_max->x / 2) - 50);
 	(*printer).PushAttribute("y", -15);
 	(*printer).PushAttribute("fill", "black");
 	(*printer).PushAttribute("font-size", "25");
-	(*printer).PushText(retStream.str().c_str());
+	(*printer).PushText(ret_stream.str().c_str());
 	(*printer).CloseElement();
 }

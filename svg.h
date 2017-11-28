@@ -12,6 +12,9 @@
 
 using namespace std;
 
+/*
+	Trida slouzici pro generovani SVG souboru
+*/
 class SVG
 {
 public:

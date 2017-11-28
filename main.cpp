@@ -23,6 +23,14 @@ using namespace tinyxml2;
 Database *db;
 SVG *svg;
 
+/*
+	Funkce pro vytvoreni vsech SVG souboru, kde jeden soubor bude obsahovat jeden graf celeho segmentu
+
+	points - vektor obsahujici vsechny segmenty a jejich body
+	points_average - vektor obsahujici vsechny segmenty a body vytvorene pomoci klouzaveho prumeru
+	peaks - vektor obsahujici vsechny vykyvy
+	peak_segment_position - pole obsahujici indexy zacatku vykyvu segmentu
+*/
 void print_all_segments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
 	size_t peak_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
@@ -32,6 +40,14 @@ void print_all_segments(vector<segment_points*> points, vector<segment_points*> 
 	}
 }
 
+/*
+Funkce pro vytvoreni vsech SVG souboru, kde jeden soubor bude obsahovat vice grafu rozdelenych na jednotlive dny v ramci segmentu
+
+points - vektor obsahujici vsechny segmenty a jejich body
+points_average - vektor obsahujici vsechny segmenty a body vytvorene pomoci klouzaveho prumeru
+peaks - vektor obsahujici vsechny vykyvy
+peak_segment_position - pole obsahujici indexy zacatku vykyvu segmentu
+*/
 void print_all_split_segments(vector<segment_points*> points, vector<segment_points*> points_by_day, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
 	size_t points_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
@@ -41,9 +57,16 @@ void print_all_split_segments(vector<segment_points*> points, vector<segment_poi
 	}
 }
 
+/*
+	Funkce ktera vytiskne statistiku ve formatu CSV
+
+	points - vektor obsahujici vsechny segmenty a jejich body
+	peaks - vektor obsahujici vsechny vykyvy
+	peak_segment_position - pole obsahujici indexy zacatku vykyvu segmentu
+*/
 void print_stats(vector<segment_points*> points, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
-	ostringstream retStream;
-	retStream << "ID segment;Minimum ist value;Maximum ist value;Average ist value;Found peaks\n";
+	ostringstream ret_stream;
+	ret_stream << "ID segment;Minimum ist value;Maximum ist value;Average ist value;Found peaks\n";
 
 	for (size_t i = 0; i < points.size(); i++) {
 		segment_points* segment = points.at(i);
@@ -69,14 +92,20 @@ void print_stats(vector<segment_points*> points, vector<segment_peaks*> peaks, s
 			count_peaks += peaks.at(y)->peaks->size();
 		}
 
-		retStream << segment->segmentid << ";" << min_ist << ";" << max_ist << ";" << average << ";" << count_peaks << "\n";
+		ret_stream << segment->segmentid << ";" << min_ist << ";" << max_ist << ";" << average << ";" << count_peaks << "\n";
 	}
 	
-	cout << retStream.str();
+	cout << ret_stream.str();
 
 }
 
-void get_calculate_point(map<size_t, vector<measured_value*>> values, vector<string> args, config* cfg) {
+/*
+	Funkce pro spusteni vsech vypoctu na zaklade zadanych parametru uzivatelem
+
+	values - mapa obsahujici vsechny hodnoty measured_value ziskanych z 
+	cfg - config pro spusteni vypoctu (vytvoren z parametru zadane uzivatelem)
+*/
+void get_calculate_point(map<size_t, vector<measured_value*>> values, config* cfg) {
 	vector<segment_points*> points_average;
 	vector<segment_peaks*> peaks;
 	map<size_t, vector<measured_value*>> values_average;
@@ -152,6 +181,11 @@ void get_calculate_point(map<size_t, vector<measured_value*>> values, vector<str
 	free(peak_segment_position);
 }
 
+/*
+	Funkce pro rozdeleny vsech hodnot do mapy jednotlivych segmentu
+
+	values - vsechny hodnoty measuredValue ziskane z DB
+*/
 map<size_t, vector<measured_value*>> transform_measured_value(vector<measured_value*> values) {
 	map<size_t, vector<measured_value*>> values_map;
 	for (auto &row : values) {
@@ -168,7 +202,12 @@ map<size_t, vector<measured_value*>> transform_measured_value(vector<measured_va
 	return values_map;
 }
 
-void start_program(vector<string> args, config* cfg) {
+/*
+	Funkce pro spusteni programu
+
+	cfg - config pro spusteni vypoctu (vytvoren z parametru zadane uzivatelem)
+*/
+void start_program(config* cfg) {
 	db = new Database(cfg->db_file_name);
 	svg = new SVG();
 
@@ -179,27 +218,34 @@ void start_program(vector<string> args, config* cfg) {
 		return;
 	}
 	
-	get_calculate_point(values_map, args, cfg);
+	get_calculate_point(values_map, cfg);
 
 	free_measured_values(values);
 	delete(svg);
 	delete(db);
 }
 
+/*
+	Vychozi funkce, ktera se zavola po spusteni programu. Slouzi primarne k osetreni vstupnich parametru od uzivatele.
+*/
 void run(int argc, char *argv[]) {
 	vector<string> args(argv + 1, argv + argc + !argc);
 	config* cfg = validate_input(args);
 	if (cfg->valid_input) {
-		start_program(args, cfg);
+		start_program(cfg);
 	}
 	free(cfg);
 }
 
+/*
+	Hlavni funkce main. Vola se funkce run().
+	Po odkomentovani _CrtDumpMemoryLeaks() je mozne zjistit pripadne memory leaky
+*/
 int main(int argc, char *argv[])
 {
 	run(argc, argv);
 
-	_CrtDumpMemoryLeaks();
+	//_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
 	/*cout << "Please press any key to exit the program ..." << endl;

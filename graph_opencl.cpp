@@ -2,10 +2,16 @@
 
 using namespace std;
 
+/*
+	Komparator pro serazeni vektoru vykyvu
+*/
 bool comparatorBySum(const peak* a, const peak* b) {
 	return a->sum > b->sum;
 }
 
+/*
+	Funkce pro inicializaci vsech potrebnych promennych pro praci s GPU
+*/
 cl_config* prepare_opencl_config() {
 	cl_config* config = (cl_config*) malloc(sizeof(cl_config));
 	if (config == nullptr) {
@@ -65,6 +71,24 @@ cl_config* prepare_opencl_config() {
 	return config;
 }
 
+/*
+	Funkce pro zavolani vypoctu vsech vykyvu na graficke karte
+
+	config - inicializovane promenne pro praci s GPU
+	count_point_values - pocet vsech bodu ze vsech segmentu
+	count_point_average_values - pocet vsech bodu ze vsech segmentu (klouzavy prumer)
+	count_segments - pocet segmentu
+	segment_positions - pozice zacatku bodu pro vsechny segmentu
+	p_x - ukazatel na pole vsech X hodnot
+	p_y - ukazatel na pole vsech Y hodnot
+	p_ist - ukazatel na pole vsech IST hodnot
+	pa_x - ukazatel na pole vsech X hodnot (klouzavy prumer)
+	pa_y - ukazatel na pole vsech Y hodnot (klouzavy prumer)
+	result_count_peaks - alokovane pole pro pocet vykyvu v segmentech
+	peak_x1 - index X1 bodu znacici zacatek vykyvu
+	peak_x2 - index X2 bodu znacici konec vykyvu
+	peak_sum - ohodnoceni vsech vykyvu
+*/
 size_t do_opencl_peaks(cl_config* config, size_t count_point_values, size_t count_point_average_values, size_t *count_segments, size_t* segment_positions,
 	float* p_x, float* p_y, float* p_ist, float* pa_x, float* pa_y,
 	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum) {
@@ -177,6 +201,11 @@ size_t do_opencl_peaks(cl_config* config, size_t count_point_values, size_t coun
 	return 0;
 }
 
+/*
+	Funkce pro vytvoreni pole zacatku pozic bodu jednotlivych segmentu
+
+	points - vektor obsahujici vsechny segmenty vcetne bodu
+*/
 size_t* get_positions_of_points(vector<segment_points*> points) {
 	size_t malloc_size = points.size() + 1;
 	size_t* segment_positions = (size_t*)malloc(sizeof(size_t) * malloc_size);
@@ -200,6 +229,15 @@ size_t* get_positions_of_points(vector<segment_points*> points) {
 	return segment_positions;
 }
 
+/*
+	Funkce pro prevedeni vektoru segmentu do poli primitivnich datavych typu, ktery slouzi pro predani GPU
+	
+	points - vektor obsahujici vsechny segmenty vcetne bodu
+	x_values - preadlokovanane pole pro X hodnoty
+	y_values - preadlokovanane pole pro Y hodnoty
+	ist_values - preadlokovanane pole pro IST hodnoty
+	average - podminka, zda se jedna o vektor segmentu klouzaveho prumeru
+*/
 void get_segments_info(vector<segment_points*> points, float* x_values, float* y_values, float* ist_values, bool average) {
 	size_t z = 0;
 	for (size_t i = 0; i < points.size(); i++) {
@@ -217,6 +255,18 @@ void get_segments_info(vector<segment_points*> points, float* x_values, float* y
 	}
 }
 
+/*
+	Funkce pro vytvoreni vektoru vykyvu ziskanych z GPU
+
+	points - vektor obsahujici vsechny segmenty vcetne bodu
+	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
+	result_count_peaks - pocet nalezenych vykyvu vsech segmentu
+	peak_x1 - index X1 bodu znacici zacatek vykyvu
+	peak_x2 - index X2 bodu znacici konec vykyvu
+	peak_sum - ohodnoceni vsech vykyvu
+	segment_positions - pozice zacatku segmentu v poli obsahujici vsechny body
+	result_segments_position - pole obsahujici indexy pocatku kazdeho segmentu
+*/
 vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segment_points*> points_by_day, 
 	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum, size_t* segment_positions, size_t** result_segments_position) {
 	vector<segment_peaks*> results;
@@ -270,6 +320,15 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 	return results;
 }
 
+/*
+	Funkce pro ziskani vsech vykyvu pomoci GPU
+
+	config - inicializovane promenne pro praci s GPU
+	points - vektor obsahujici vsechny segmenty a jejich body
+	points_average - vektor obsahujici vsechny segmenty a body vytvorene pomoci klouzaveho prumeru
+	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
+	result_segments_position - pole obsahujici indexy pocatku kazdeho segmentu
+*/
 vector<segment_peaks*> get_peaks_opencl(cl_config* config, vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position) {
 	vector<segment_peaks*> peaks;
 	size_t count_segments = points.size();

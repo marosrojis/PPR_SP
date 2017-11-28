@@ -1,5 +1,4 @@
 #include "database.h"
-#include <iostream>
 
 /* 
 	Konstruktor tridy pro praci s databazi
@@ -9,7 +8,7 @@ Database::Database(const char* file_name)
 {
 	database = NULL;
 	if (!open(file_name)) {
-		cout << "Database file not exist!!\n" << endl;
+		cout << "Database file " << file_name << " not exist!!\n" << endl;
 		exit(1);
 	}
 }
@@ -24,9 +23,14 @@ Database::~Database()
 */
 bool Database::open(const char* file_name)
 {
-	if (sqlite3_open(file_name, &database) == SQLITE_OK)
-		return true;
+	if ((_access(file_name, 0)) != -1)
+	{
+		if (sqlite3_open(file_name, &database) == SQLITE_OK) {
+			return true;
+		}
 
+		return false;
+	}
 	return false;
 }
 

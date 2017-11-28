@@ -87,7 +87,7 @@ void print_stats(vector<segment_points*> points, vector<segment_peaks*> peaks, s
 
 		size_t peaks_start_index = peak_segment_position[i];
 		size_t peaks_end_index = (i == points.size() - 1) ? peaks.size() : peak_segment_position[i + 1];
-		int count_peaks = 0;
+		size_t count_peaks = 0;
 		for (size_t y = peaks_start_index; y < peaks_end_index; y++) {
 			count_peaks += peaks.at(y)->peaks->size();
 		}

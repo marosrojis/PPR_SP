@@ -3,8 +3,14 @@
 #define __STRUCTS__
 
 #include <stdlib.h>
+#define CL_USE_DEPRECATED_OPENCL_1_1_APIS
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#pragma warning( push )
+#pragma warning( disable : 4996)
+#include <CL/cl.hpp>
+#pragma warning( pop )
 
-typedef struct measuredValue
+typedef struct measured_value
 {
 	unsigned int id;
 	unsigned int second;
@@ -39,6 +45,14 @@ typedef struct segment_peaks
 	std::vector<peak*> *peaks;
 	size_t segmentid;
 } SEGMENT_PEAKS;
+
+typedef struct cl_config {
+	cl_platform_id platform_id;
+	cl_program program;
+	cl_context context;
+	cl_device_id device_id;
+	cl_kernel kernel;
+} CL_CONFIG;
 
 typedef struct config
 {

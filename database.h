@@ -18,7 +18,7 @@ public:
 
 	bool open(const char* filename);
 	vector<vector<string>> query(char* query);
-	vector<measuredValue*> get_measured_value();
+	vector<measured_value*> get_measured_value();
 	vector<int> get_all_segments_id();
 	void close();
 

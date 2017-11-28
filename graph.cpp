@@ -245,7 +245,7 @@ vector<segment_peaks*> get_peaks(vector<segment_points*> points, vector<segment_
 	return results;
 }
 
-map<size_t, float> get_max_values(map<size_t, vector<measuredValue*>> values) {
+map<size_t, float> get_max_values(map<size_t, vector<measured_value*>> values) {
 	map<size_t, float> results;
 	for (auto &value : values) {
 		float max_value = get_max_value_ist(value.second);
@@ -301,7 +301,7 @@ vector<segment_points*> split_segments_by_day(vector<segment_points*> segments) 
 	return results;
 }
 
-vector<segment_points*> get_points_from_values(map<size_t, vector<measuredValue*>> values, map<size_t, float> max_values, bool isAverage) {
+vector<segment_points*> get_points_from_values(map<size_t, vector<measured_value*>> values, map<size_t, float> max_values, bool isAverage) {
 	vector<segment_points*> results;
 	for (auto &row : values) {
 		size_t i = 0;
@@ -341,9 +341,9 @@ vector<segment_points*> get_points_from_values(map<size_t, vector<measuredValue*
 	return results;
 }
 
-measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values, int moving_average_size, size_t size)
+measured_value** parallel_calculate_moving_average(vector<measured_value*> values, int moving_average_size, size_t size)
 {
-	measuredValue** data = (measuredValue**)malloc(sizeof(measuredValue*) * size);
+	measured_value** data = (measured_value**)malloc(sizeof(measured_value*) * size);
 	if (data == nullptr) {
 		printf("Malloc memory error\n");
 		return nullptr;
@@ -352,7 +352,7 @@ measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values,
 	tbb::parallel_for(size_t(0), size, [&](size_t i)
 	{
 		float sum = 0;
-		measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
+		measured_value* value = (measured_value*)malloc(sizeof(measured_value));
 		if (value == nullptr) {
 			printf("Malloc memory error\n");
 			return;
@@ -367,7 +367,7 @@ measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values,
 			value->ist = sum / MOVING_AVERAGE;
 		}
 
-		measuredValue* segment_value = values.at(i);
+		measured_value* segment_value = values.at(i);
 		value->second = segment_value->second;
 		value->segmentid = segment_value->segmentid;
 		sum = 0;
@@ -377,15 +377,15 @@ measuredValue** parallel_calculate_moving_average(vector<measuredValue*> values,
 	return data;
 }
 
-map<size_t, vector<measuredValue*>> calculate_moving_average_tbb(map<size_t, vector<measuredValue*>> values_map) {
-	map<size_t, vector<measuredValue*>> results;
+map<size_t, vector<measured_value*>> calculate_moving_average_tbb(map<size_t, vector<measured_value*>> values_map) {
+	map<size_t, vector<measured_value*>> results;
 	float sum = 0;
 
 	int size = (int)MOVING_AVERAGE / 2;
 
 	for (auto &row : values_map) {
-		measuredValue** data = parallel_calculate_moving_average(row.second, size, row.second.size());
-		vector<measuredValue*> temp(data, data + row.second.size());
+		measured_value** data = parallel_calculate_moving_average(row.second, size, row.second.size());
+		vector<measured_value*> temp(data, data + row.second.size());
 		results[row.first] = temp;
 		free(data);
 	}
@@ -393,19 +393,19 @@ map<size_t, vector<measuredValue*>> calculate_moving_average_tbb(map<size_t, vec
 	return results;
 }
 
-map<size_t, vector<measuredValue*>> calculate_moving_average(map<size_t, vector<measuredValue*>> values_map) {
-	map<size_t, vector<measuredValue*>> results;
+map<size_t, vector<measured_value*>> calculate_moving_average(map<size_t, vector<measured_value*>> values_map) {
+	map<size_t, vector<measured_value*>> results;
 	float sum = 0;
 
 	int size = (int)MOVING_AVERAGE / 2;
 
 	for (auto &row : values_map) {
 
-		vector<measuredValue*> temp;
+		vector<measured_value*> temp;
 		results[row.first] = temp;
 
 		for (size_t i = 0; i < row.second.size(); i++) {
-			measuredValue* value = (measuredValue*)malloc(sizeof(measuredValue));
+			measured_value* value = (measured_value*)malloc(sizeof(measured_value));
 			if (value == nullptr) {
 				printf("Malloc memory error\n");
 				return results;
@@ -420,7 +420,7 @@ map<size_t, vector<measuredValue*>> calculate_moving_average(map<size_t, vector<
 				value->ist = sum / MOVING_AVERAGE;
 			}
 
-			measuredValue* segment_value = row.second.at(i);
+			measured_value* segment_value = row.second.at(i);
 			value->second = segment_value->second;
 			value->segmentid = segment_value->segmentid;
 			results.find(row.first)->second.push_back(value);
@@ -431,7 +431,7 @@ map<size_t, vector<measuredValue*>> calculate_moving_average(map<size_t, vector<
 	return results;
 }
 
-float get_max_value_ist(vector<measuredValue*> values) {
+float get_max_value_ist(vector<measured_value*> values) {
 	float max_value = 0;
 	for (auto &row : values) {
 		if (max_value < row->ist) {

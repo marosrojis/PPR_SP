@@ -6,9 +6,12 @@ bool comparatorBySum(const peak* a, const peak* b) {
 	return a->sum > b->sum;
 }
 
-size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_values, size_t *count_segments, size_t* segment_positions,
-	float* p_x, float* p_y, float* p_ist, float* pa_x, float* pa_y,
-	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum) {
+cl_config* prepare_opencl_config() {
+	cl_config* config = (cl_config*) malloc(sizeof(cl_config));
+	if (config == nullptr) {
+		printf("Malloc memory error\n");
+		return nullptr;
+	}
 
 	// Load the kernel source code into the array source_str
 	FILE *fp;
@@ -27,7 +30,7 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	source_str = (char*)malloc(MAX_SOURCE_SIZE);
 	if (source_str == nullptr) {
 		printf("Malloc memory error\n");
-		return 1;
+		return nullptr;
 	}
 	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	fclose(fp);
@@ -44,22 +47,46 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	// Create an OpenCL context
 	cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
 
+	// Create a program from the kernel source
+	cl_program program = clCreateProgramWithSource(context, 1,
+		(const char **)&source_str, (const size_t *)&source_size, &ret);
+
+	// Create the OpenCL kernel
+	cl_kernel kernel = clCreateKernel(program, "calculate_peaks", &ret);
+
+	config->context = context;
+	config->device_id = device_id;
+	config->kernel = kernel;
+	config->platform_id = platform_id;
+	config->program = program;
+
+	free(source_str);
+
+	return config;
+}
+
+size_t do_opencl_peaks(cl_config* config, size_t count_point_values, size_t count_point_average_values, size_t *count_segments, size_t* segment_positions,
+	float* p_x, float* p_y, float* p_ist, float* pa_x, float* pa_y,
+	size_t* result_count_peaks, size_t* peak_x1, size_t* peak_x2, float* peak_sum) {
+
+	cl_int ret;
+	
 	// Create a command queue
-	cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+	cl_command_queue command_queue = clCreateCommandQueue(config->context, config->device_id, 0, &ret);
 
 	// Create memory buffers on the device for each vector 
-	cl_mem count_segments_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(size_t), NULL, &ret);
-	cl_mem segment_positions_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, (*count_segments + 1) * sizeof(size_t), NULL, &ret);
-	cl_mem p_x_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
-	cl_mem p_y_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
-	cl_mem p_ist_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
-	cl_mem pa_x_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_average_values * sizeof(float), NULL, &ret);
-	cl_mem pa_y_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, count_point_average_values * sizeof(float), NULL, &ret);
+	cl_mem count_segments_mem_obj = clCreateBuffer(config->context, CL_MEM_READ_ONLY, sizeof(size_t), NULL, &ret);
+	cl_mem segment_positions_mem_obj = clCreateBuffer(config->context, CL_MEM_READ_ONLY, (*count_segments + 1) * sizeof(size_t), NULL, &ret);
+	cl_mem p_x_mem_obj = clCreateBuffer(config->context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
+	cl_mem p_y_mem_obj = clCreateBuffer(config->context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
+	cl_mem p_ist_mem_obj = clCreateBuffer(config->context, CL_MEM_READ_ONLY, count_point_values * sizeof(float), NULL, &ret);
+	cl_mem pa_x_mem_obj = clCreateBuffer(config->context, CL_MEM_READ_ONLY, count_point_average_values * sizeof(float), NULL, &ret);
+	cl_mem pa_y_mem_obj = clCreateBuffer(config->context, CL_MEM_READ_ONLY, count_point_average_values * sizeof(float), NULL, &ret);
 
-	cl_mem result_count_peaks_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, *count_segments * sizeof(size_t), NULL, &ret);
-	cl_mem peak_x1_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
-	cl_mem peak_x2_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
-	cl_mem peak_sum_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(float), NULL, &ret);
+	cl_mem result_count_peaks_mem_obj = clCreateBuffer(config->context, CL_MEM_WRITE_ONLY, *count_segments * sizeof(size_t), NULL, &ret);
+	cl_mem peak_x1_mem_obj = clCreateBuffer(config->context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
+	cl_mem peak_x2_mem_obj = clCreateBuffer(config->context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(size_t), NULL, &ret);
+	cl_mem peak_sum_mem_obj = clCreateBuffer(config->context, CL_MEM_WRITE_ONLY, count_point_values * sizeof(float), NULL, &ret);
 
 	// Copy the lists A and B to their respective memory buffers
 	ret = clEnqueueWriteBuffer(command_queue, count_segments_mem_obj, CL_TRUE, 0, sizeof(size_t), count_segments, 0, NULL, NULL);
@@ -70,19 +97,14 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	ret = clEnqueueWriteBuffer(command_queue, pa_x_mem_obj, CL_TRUE, 0, count_point_average_values * sizeof(float), pa_x, 0, NULL, NULL);
 	ret = clEnqueueWriteBuffer(command_queue, pa_y_mem_obj, CL_TRUE, 0, count_point_average_values * sizeof(float), pa_y, 0, NULL, NULL);
 
-
-	// Create a program from the kernel source
-	cl_program program = clCreateProgramWithSource(context, 1,
-		(const char **)&source_str, (const size_t *)&source_size, &ret);
-
 	// Build the program
-	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+	ret = clBuildProgram(config->program, 1, &(config->device_id), NULL, NULL, NULL);
 
 	if (ret != CL_SUCCESS) { // odkomentuj a mas vypis jen kdyz to tam vyfailuje, jinak to vypisuje vse
 		char *buff_erro;
 		cl_int errcode;
 		size_t build_log_len;
-		errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &build_log_len);
+		errcode = clGetProgramBuildInfo(config->program, config->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &build_log_len);
 		if (errcode) {
 			printf("clGetProgramBuildInfo failed at line %d\n", __LINE__);
 			exit(-1);
@@ -94,7 +116,7 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 			exit(-2);
 		}
 
-		errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, build_log_len, buff_erro, NULL);
+		errcode = clGetProgramBuildInfo(config->program, config->device_id, CL_PROGRAM_BUILD_LOG, build_log_len, buff_erro, NULL);
 		if (errcode) {
 			printf("clGetProgramBuildInfo failed at line %d\n", __LINE__);
 			exit(-3);
@@ -106,7 +128,7 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	}
 
 	// Create the OpenCL kernel
-	cl_kernel kernel = clCreateKernel(program, "calculate_peaks", &ret);
+	cl_kernel kernel = clCreateKernel(config->program, "calculate_peaks", &ret);
 
 	// Set the arguments of the kernel
 	ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&count_segments_mem_obj);
@@ -136,8 +158,8 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	// Clean up
 	ret = clFlush(command_queue);
 	ret = clFinish(command_queue);
-	ret = clReleaseKernel(kernel);
-	ret = clReleaseProgram(program);
+	ret = clReleaseKernel(config->kernel);
+	ret = clReleaseProgram(config->program);
 	ret = clReleaseMemObject(count_segments_mem_obj);
 	ret = clReleaseMemObject(segment_positions_mem_obj);
 	ret = clReleaseMemObject(p_x_mem_obj);
@@ -150,8 +172,7 @@ size_t do_opencl_peaks(size_t count_point_values, size_t count_point_average_val
 	ret = clReleaseMemObject(peak_x2_mem_obj);
 	ret = clReleaseMemObject(peak_sum_mem_obj);
 	ret = clReleaseCommandQueue(command_queue);
-	ret = clReleaseContext(context);
-	free(source_str);
+	ret = clReleaseContext(config->context);
 
 	return 0;
 }
@@ -249,7 +270,7 @@ vector<segment_peaks*> create_peaks(vector<segment_points*> points, vector<segme
 	return results;
 }
 
-vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position) {
+vector<segment_peaks*> get_peaks_opencl(cl_config* config, vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_points*> points_by_day, size_t** result_segments_position) {
 	vector<segment_peaks*> peaks;
 	size_t count_segments = points.size();
 	size_t* segment_positions = get_positions_of_points(points);
@@ -359,7 +380,7 @@ vector<segment_peaks*> get_peaks_opencl(vector<segment_points*> points, vector<s
 		return peaks;
 	}
 
-	do_opencl_peaks(count_point_values, count_point_average_values, p_count_segments, segment_positions, p_x, p_y, p_ist, pa_x, pa_y, result_count_peaks, peak_x1, peak_x2, peak_sum);
+	do_opencl_peaks(config, count_point_values, count_point_average_values, p_count_segments, segment_positions, p_x, p_y, p_ist, pa_x, pa_y, result_count_peaks, peak_x1, peak_x2, peak_sum);
 
 	peaks = create_peaks(points, points_by_day, result_count_peaks, peak_x1, peak_x2, peak_sum, segment_positions, result_segments_position);
 

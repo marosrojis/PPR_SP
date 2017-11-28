@@ -23,7 +23,7 @@ using namespace tinyxml2;
 Database *db;
 SVG *svg;
 
-void printAllSegments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+void print_all_segments(vector<segment_points*> points, vector<segment_points*> points_average, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
 	size_t peak_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
 		size_t peaks_start_index = peak_segment_position[i];
@@ -32,7 +32,7 @@ void printAllSegments(vector<segment_points*> points, vector<segment_points*> po
 	}
 }
 
-void printAllSplitSegments(vector<segment_points*> points, vector<segment_points*> points_by_day, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+void print_all_split_segments(vector<segment_points*> points, vector<segment_points*> points_by_day, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
 	size_t points_position = 0;
 	for (size_t i = 0; i < points.size(); i++) {
 		size_t peaks_start_index = peak_segment_position[i];
@@ -41,7 +41,7 @@ void printAllSplitSegments(vector<segment_points*> points, vector<segment_points
 	}
 }
 
-void printStats(vector<segment_points*> points, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
+void print_stats(vector<segment_points*> points, vector<segment_peaks*> peaks, size_t* peak_segment_position) {
 	ostringstream retStream;
 	retStream << "ID segment;Minimum ist value;Maximum ist value;Average ist value;Found peaks\n";
 
@@ -76,10 +76,10 @@ void printStats(vector<segment_points*> points, vector<segment_peaks*> peaks, si
 
 }
 
-void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<string> args, config* cfg) {
+void get_calculate_point(map<size_t, vector<measured_value*>> values, vector<string> args, config* cfg) {
 	vector<segment_points*> points_average;
 	vector<segment_peaks*> peaks;
-	map<size_t, vector<measuredValue*>> values_average;
+	map<size_t, vector<measured_value*>> values_average;
 	
 	map<size_t, float> max_values = get_max_values(values);
 	vector<segment_points*> points = get_points_from_values(values, max_values, false);
@@ -111,12 +111,17 @@ void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<stri
 			peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
 		}
 		else if (cfg->run_gpu) {
+			cl_config* config = prepare_opencl_config();
+
+			begin = std::chrono::steady_clock::now();
 			values_average = calculate_moving_average(values);
 			if (values_average.size() == 0) {
 				return;
 			}
 			points_average = get_points_from_values(values_average, max_values, true);
-			peaks = get_peaks_opencl(points, points_average, points_by_day, &peak_segment_position);
+			peaks = get_peaks_opencl(config, points, points_average, points_by_day, &peak_segment_position);
+
+			free(config);
 		}
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 		std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
@@ -129,14 +134,14 @@ void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<stri
 	}
 
 	if (cfg->split_segments) {
-		printAllSplitSegments(points, points_by_day, peaks, peak_segment_position);
+		print_all_split_segments(points, points_by_day, peaks, peak_segment_position);
 	}
 	else {
-		printAllSegments(points, points_average, peaks, peak_segment_position);
+		print_all_segments(points, points_average, peaks, peak_segment_position);
 	}
 
 	if (cfg->print_stats) {
-		printStats(points, peaks, peak_segment_position);
+		print_stats(points, peaks, peak_segment_position);
 	}
 	
 	free_peaks(peaks);
@@ -147,15 +152,15 @@ void get_calculate_point(map<size_t, vector<measuredValue*>> values, vector<stri
 	free(peak_segment_position);
 }
 
-map<size_t, vector<measuredValue*>> transform_measured_value(vector<measuredValue*> values) {
-	map<size_t, vector<measuredValue*>> values_map;
+map<size_t, vector<measured_value*>> transform_measured_value(vector<measured_value*> values) {
+	map<size_t, vector<measured_value*>> values_map;
 	for (auto &row : values) {
-		map<size_t, vector<measuredValue*>>::iterator p = values_map.find(row->segmentid);
+		map<size_t, vector<measured_value*>>::iterator p = values_map.find(row->segmentid);
 		if (p != values_map.end()) {
 			p->second.push_back(row);
 		}
 		else {
-			vector<measuredValue*> temp;
+			vector<measured_value*> temp;
 			temp.push_back(row);
 			values_map[row->segmentid] = temp;
 		}
@@ -167,9 +172,9 @@ void start_program(vector<string> args, config* cfg) {
 	db = new Database(cfg->db_file_name);
 	svg = new SVG();
 
-	vector<measuredValue*> values = db->get_measured_value();
+	vector<measured_value*> values = db->get_measured_value();
 
-	map<size_t, vector<measuredValue*>> values_map = transform_measured_value(values);
+	map<size_t, vector<measured_value*>> values_map = transform_measured_value(values);
 	if (values_map.size() == 0) {
 		return;
 	}
@@ -194,7 +199,7 @@ int main(int argc, char *argv[])
 {
 	run(argc, argv);
 
-	//_CrtDumpMemoryLeaks();
+	_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
 	/*cout << "Please press any key to exit the program ..." << endl;

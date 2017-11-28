@@ -22,18 +22,18 @@ bool Database::open(const char* filename)
 	return false;
 }
 
-vector<measuredValue*> Database::get_measured_value() {
-	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat) FROM measuredvalue WHERE ist IS NOT NULL;");
-	vector<measuredValue*> values;
+vector<measured_value*> Database::get_measured_value() {
+	vector<vector<string>> results = query("SELECT id, ist, segmentid, strftime('%s', measuredat) FROM measuredValue WHERE ist IS NOT NULL;");
+	vector<measured_value*> values;
 	for (auto &row : results) // access by reference to avoid copying
 	{
-		measuredValue* value = (measuredValue*) malloc(sizeof(measuredValue));
+		measured_value* value = (measured_value*) malloc(sizeof(measured_value));
 		if (value == nullptr) {
 			for (size_t i = 0; i < values.size(); i++) {
 				free(values.at(i));
 			}
 			cout << "Malloc memory error" << endl;
-			vector<measuredValue*> free_result;
+			vector<measured_value*> free_result;
 			return free_result;
 		}
 		value->id = stoi(row.at(0));

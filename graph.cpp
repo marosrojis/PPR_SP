@@ -52,104 +52,106 @@ segment_peaks* create_segment_peaks(vector<peak*> *peaks, size_t segmentid) {
 	peaks_segment - pole pro ulozeni, kolik vykyvu bylo nalezeno pro konkretni segment
 	size - pocet segmentu
 */
-segment_peaks*** parallel_get_peaks(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** peaks_segment, size_t size) {
+segment_peaks*** parallel_get_peaks(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** peaks_segment, size_t size, config* cfg) {
 	segment_peaks*** data = (segment_peaks***)malloc(sizeof(segment_peaks**) * size);
 	if (data == nullptr) {
 		printf("Malloc memory error\n");
 		return nullptr;
 	}
 
-	tbb::task_scheduler_init init(4);
-	tbb::parallel_for(size_t(0), size, [&](size_t a) {
-		vector<point*> segment = *(points.at(a)->points);
+	tbb::task_arena limited_arena(cfg->number_of_threads);
+	limited_arena.execute([=] {
+		tbb::parallel_for(size_t(0), size, [&](size_t a) {
+			vector<point*> segment = *(points.at(a)->points);
 
-		bool is_peak = false;
-		float sum = 0, grow = 0;
-		point* temp_peak = nullptr;
-		size_t i = 0;
-		vector<peak*> peaks;
-		for (auto &point_base_line : segment) {
-			if (i >= points_average.at(a)->points->size()) { // i je >= nez celkova velikost average vectoru, tak konec cyklu (uz neni kam sahat)
-				break;
-			}
+			bool is_peak = false;
+			float sum = 0, grow = 0;
+			point* temp_peak = nullptr;
+			size_t i = 0;
+			vector<peak*> peaks;
+			for (auto &point_base_line : segment) {
+				if (i >= points_average.at(a)->points->size()) { // i je >= nez celkova velikost average vectoru, tak konec cyklu (uz neni kam sahat)
+					break;
+				}
 
-			point* average_line = points_average.at(a)->points->at(i);
+				point* average_line = points_average.at(a)->points->at(i);
 
-			if (point_base_line->x != average_line->x) { // tato podminka je kvuli zacatku points vektoru, protoze obsahuje body, ktery points_average neobsahuje
-				continue;
-			}
+				if (point_base_line->x != average_line->x) { // tato podminka je kvuli zacatku points vektoru, protoze obsahuje body, ktery points_average neobsahuje
+					continue;
+				}
 
-			if (point_base_line->y <= average_line->y) {
-				if (!is_peak) {
-					temp_peak = point_base_line;
-					sum = 0;
-					grow = 0;
-					is_peak = true;
+				if (point_base_line->y <= average_line->y) {
+					if (!is_peak) {
+						temp_peak = point_base_line;
+						sum = 0;
+						grow = 0;
+						is_peak = true;
+					}
+					else {
+						sum += abs(temp_peak->ist - point_base_line->ist);
+						grow += temp_peak->ist - point_base_line->ist;
+					}
 				}
 				else {
-					sum += abs(temp_peak->ist - point_base_line->ist);
-					grow += temp_peak->ist - point_base_line->ist;
-				}
-			}
-			else {
-				if (is_peak) {
-					if (point_base_line->x - temp_peak->x >= MIN_MINUTE_FOR_ACTION && grow < 3) {
-						peak* temp = (peak*)malloc(sizeof(peak));
-						if (temp == nullptr) {
-							printf("Malloc memory error\n");
-							return;
+					if (is_peak) {
+						if (point_base_line->x - temp_peak->x >= MIN_MINUTE_FOR_ACTION && grow < 3) {
+							peak* temp = (peak*)malloc(sizeof(peak));
+							if (temp == nullptr) {
+								printf("Malloc memory error\n");
+								return;
+							}
+
+							temp->x1 = temp_peak;
+							temp->x2 = point_base_line;
+							temp->sum = sum;
+							peaks.push_back(temp);
+
 						}
-
-						temp->x1 = temp_peak;
-						temp->x2 = point_base_line;
-						temp->sum = sum;
-						peaks.push_back(temp);
-
+						is_peak = false;
 					}
-					is_peak = false;
+				}
+				i++;
+			}
+
+			size_t seg_day = a;
+			while (points.at(a)->segmentid != points_by_day.at(seg_day)->segmentid) {
+				seg_day++;
+			}
+			vector<segment_peaks*> peaks_in_segment;
+			vector<peak*> peaks_in_day;
+			for (auto &peak_seg : peaks) {
+				float start_day = points_by_day.at(seg_day)->points->at(0)->x;
+				float end_day = points_by_day.at(seg_day)->points->at(points_by_day.at(seg_day)->points->size() - 1)->x;
+				if (peak_seg->x1->x >= start_day && peak_seg->x1->x <= end_day) {
+					peaks_in_day.push_back(peak_seg);
+				}
+				else {
+					segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points.at(a)->segmentid);
+					peaks_in_day.clear();
+					peaks_in_day.push_back(peak_seg);
+					peaks_in_segment.push_back(seg_peaks);
+					seg_day++;
 				}
 			}
-			i++;
-		}
 
-		size_t seg_day = a;
-		while (points.at(a)->segmentid != points_by_day.at(seg_day)->segmentid) {
-			seg_day++;
-		}
-		vector<segment_peaks*> peaks_in_segment;
-		vector<peak*> peaks_in_day;
-		for (auto &peak_seg : peaks) {
-			float start_day = points_by_day.at(seg_day)->points->at(0)->x;
-			float end_day = points_by_day.at(seg_day)->points->at(points_by_day.at(seg_day)->points->size() - 1)->x;
-			if (peak_seg->x1->x >= start_day && peak_seg->x1->x <= end_day) {
-				peaks_in_day.push_back(peak_seg);
-			}
-			else {
+			if (peaks_in_day.size() != 0) {
 				segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points.at(a)->segmentid);
 				peaks_in_day.clear();
-				peaks_in_day.push_back(peak_seg);
 				peaks_in_segment.push_back(seg_peaks);
 				seg_day++;
 			}
-		}
-
-		if (peaks_in_day.size() != 0) {
-			segment_peaks* seg_peaks = create_segment_peaks(&peaks_in_day, points.at(a)->segmentid);
-			peaks_in_day.clear();
-			peaks_in_segment.push_back(seg_peaks);
-			seg_day++;
-		}
 		
-		segment_peaks** result = (segment_peaks**)malloc(sizeof(segment_peaks*) * peaks_in_segment.size());
-		if (result == nullptr) {
-			printf("Malloc memory error\n");
-			return;
-		}
+			segment_peaks** result = (segment_peaks**)malloc(sizeof(segment_peaks*) * peaks_in_segment.size());
+			if (result == nullptr) {
+				printf("Malloc memory error\n");
+				return;
+			}
 
-		copy(peaks_in_segment.begin(), peaks_in_segment.end(), stdext::checked_array_iterator<segment_peaks**>(result, peaks_in_segment.size()));
-		(*peaks_segment)[a] = peaks_in_segment.size();
+			copy(peaks_in_segment.begin(), peaks_in_segment.end(), stdext::checked_array_iterator<segment_peaks**>(result, peaks_in_segment.size()));
+			(*peaks_segment)[a] = peaks_in_segment.size();
 
-		data[a] = result;
+			data[a] = result;
+		});
 	});
 
 	return data;
@@ -163,14 +165,14 @@ segment_peaks*** parallel_get_peaks(vector<segment_points*> &points, vector<segm
 	points_by_day - vektor obsahujici vsechny segmenty vcetne bodu, ktere jsou rozdelene na jednotlive dny
 	peak_segment_position - obsahuje index pro ziskani prvniho dne v ramci segmentu ve vektoru obsahujici vsechny vykyvy
 */
-vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** peak_segment_position) {
+vector<segment_peaks*> get_peaks_tbb(vector<segment_points*> &points, vector<segment_points*> &points_average, vector<segment_points*> &points_by_day, size_t** peak_segment_position, config* cfg) {
 	vector<segment_peaks*> results;
 	size_t* peaks_segment = (size_t*)malloc(sizeof(size_t) * points.size());
 	if (peaks_segment == nullptr) {
 		printf("Malloc memory error\n");
 		return results;
 	}
-	segment_peaks*** data = parallel_get_peaks(points, points_average, points_by_day, &peaks_segment, points.size());
+	segment_peaks*** data = parallel_get_peaks(points, points_average, points_by_day, &peaks_segment, points.size(), cfg);
 
 	size_t pos = 0;
 	for (size_t i = 0; i < points.size(); i++) {
@@ -403,7 +405,7 @@ vector<segment_points*> get_points_from_values(map<size_t, vector<measured_value
 	moving_average_size - 1/2 velikosti klouzaveho okenka
 	size - pocet hodnot v segmentu
 */
-measured_value** parallel_calculate_moving_average(vector<measured_value*> &values, int moving_average_size, size_t size)
+measured_value** parallel_calculate_moving_average(vector<measured_value*> &values, int moving_average_size, size_t size, config* cfg)
 {
 	measured_value** data = (measured_value**)malloc(sizeof(measured_value*) * size);
 	if (data == nullptr) {
@@ -411,29 +413,32 @@ measured_value** parallel_calculate_moving_average(vector<measured_value*> &valu
 		return nullptr;
 	}
 
-	tbb::parallel_for(size_t(0), size, [&](size_t i)
-	{
-		float sum = 0;
-		measured_value* value = (measured_value*)malloc(sizeof(measured_value));
-		if (value == nullptr) {
-			printf("Malloc memory error\n");
-			return;
-		}
-		if (i < moving_average_size || i + moving_average_size >= size) {
-			value->ist = NULL;
-		}
-		else {
-			for (int y = -moving_average_size; y <= moving_average_size; y++) {
-				sum += values.at(i + y)->ist;
+	tbb::task_arena limited_arena(cfg->number_of_threads);
+	limited_arena.execute([=] {
+		tbb::parallel_for(size_t(0), size, [&](size_t i)
+		{
+			float sum = 0;
+			measured_value* value = (measured_value*)malloc(sizeof(measured_value));
+			if (value == nullptr) {
+				printf("Malloc memory error\n");
+				return;
 			}
-			value->ist = sum / (float)MOVING_AVERAGE;
-		}
+			if (i < moving_average_size || i + moving_average_size >= size) {
+				value->ist = NULL;
+			}
+			else {
+				for (int y = -moving_average_size; y <= moving_average_size; y++) {
+					sum += values.at(i + y)->ist;
+				}
+				value->ist = sum / (float)MOVING_AVERAGE;
+			}
 
-		measured_value* segment_value = values.at(i);
-		value->second = segment_value->second;
-		value->segmentid = segment_value->segmentid;
-		sum = 0;
-		data[i] = value;
+			measured_value* segment_value = values.at(i);
+			value->second = segment_value->second;
+			value->segmentid = segment_value->segmentid;
+			sum = 0;
+			data[i] = value;
+		});
 	});
 
 	return data;
@@ -444,14 +449,14 @@ measured_value** parallel_calculate_moving_average(vector<measured_value*> &valu
 
 	values_map - vsechny hodnoty measured_value ziskane z DB
 */
-map<size_t, vector<measured_value*>> calculate_moving_average_tbb(map<size_t, vector<measured_value*>> &values_map) {
+map<size_t, vector<measured_value*>> calculate_moving_average_tbb(map<size_t, vector<measured_value*>> &values_map, config* cfg) {
 	map<size_t, vector<measured_value*>> results;
 	float sum = 0;
 
 	int size = (int)MOVING_AVERAGE / 2;
 
 	for (auto &row : values_map) {
-		measured_value** data = parallel_calculate_moving_average(row.second, size, row.second.size());
+		measured_value** data = parallel_calculate_moving_average(row.second, size, row.second.size(), cfg);
 		vector<measured_value*> temp(data, data + row.second.size());
 		results[row.first] = temp;
 		free(data);

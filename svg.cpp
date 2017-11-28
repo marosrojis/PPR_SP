@@ -50,7 +50,7 @@ void SVG::print_graph(vector<point*> *values, vector<point*> *values_average, ve
 	}
 	find_max_min_x_y_points(*values, x_max, y_max, x_min, y_min);
 
-	ss << "graph/test" << segmentid << ".svg";
+	ss << "graph/segment" << segmentid << ".svg";
 	errno_t err;
 	if ((err = fopen_s(&pFile, ss.str().c_str(), "w")) != 0) {
 		printf("Cannot write to segment file\n.");

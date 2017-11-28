@@ -132,12 +132,12 @@ void get_calculate_point(map<size_t, vector<measured_value*>> &values, config* c
 			peaks = get_peaks(points, points_average, points_by_day, &peak_segment_position);
 		}
 		else if (cfg->run_tbb) {
-			values_average = calculate_moving_average_tbb(values);
+			values_average = calculate_moving_average_tbb(values, cfg);
 			if (values_average.size() == 0) {
 				return;
 			}
 			points_average = get_points_from_values(values_average, max_values, true);
-			peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position);
+			peaks = get_peaks_tbb(points, points_average, points_by_day, &peak_segment_position, cfg);
 		}
 		else if (cfg->run_gpu) {
 			cl_config* config = prepare_opencl_config();
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 {
 	run(argc, argv);
 
-	//_CrtDumpMemoryLeaks();
+	_CrtDumpMemoryLeaks();
 	
 	// Wait For User To Close Program
 	/*cout << "Please press any key to exit the program ..." << endl;
